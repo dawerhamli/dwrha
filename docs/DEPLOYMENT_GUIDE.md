@@ -8,7 +8,7 @@
 - احصل على بيانات الاتصال (اسم قاعدة البيانات، المستخدم، كلمة المرور، المضيف، المنفذ)
 
 ### 2. إعداد المتغيرات البيئية
-انسخ ملف `env_template.txt` إلى `.env` واملأ القيم الصحيحة:
+انسخ ملف `env.example` إلى `.env` واملأ القيم الصحيحة:
 
 ```bash
 # Django Settings
@@ -17,8 +17,9 @@ SECRET_KEY=your-secret-key-here-change-this-in-production
 ALLOWED_HOSTS=localhost,127.0.0.1,yourdomain.com,www.yourdomain.com
 
 # Database Settings (PostgreSQL)
-DB_NAME=dawerha_db
-DB_USER=dawerha_user
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=dwrha_db
+DB_USER=postgres
 DB_PASSWORD=your-db-password-here
 DB_HOST=localhost
 DB_PORT=5432

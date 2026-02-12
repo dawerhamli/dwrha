@@ -177,9 +177,14 @@ class Company(models.Model):
     
     @property
     def company_url(self):
-        """Generate company game URL"""
+        """Generate company game URL with encrypted token"""
         from django.urls import reverse
-        return reverse('game:play', kwargs={'slug': self.slug})
+        from .utils import encrypt_slug
+        token = encrypt_slug(self.slug)
+        if token:
+            return reverse('game:play', kwargs={'token': token})
+        # Fallback to slug if encryption fails
+        return reverse('game:play', kwargs={'token': self.slug})
     
     @property
     def calculated_active_hours(self):

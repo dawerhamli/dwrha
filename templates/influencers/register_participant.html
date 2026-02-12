@@ -138,7 +138,7 @@ form.addEventListener("submit", async (e) => {
             return;
         }
 
-        const response = await fetch('{% url "influencers:register_participant_submit" slug=influencer.slug %}', {
+        const response = await fetch('{% url "influencers:register_participant_submit" token=encrypted_token %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

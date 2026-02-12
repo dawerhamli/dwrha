@@ -22,42 +22,28 @@
         {% csrf_token %}
         <div class="grid">
             <label>
-                المنصة الرئيسية
-                <div id="platformContainer" style="width: 100%;">
-                    <select name="platform" id="platformSelect" required style="width: 100%;">
-                        <option value="instagram">إنستغرام</option>
-                        <option value="tiktok">تيك توك</option>
-                        <option value="youtube">يوتيوب</option>
-                        <option value="snapchat">سناب شات</option>
-                        <option value="twitter">تويتر</option>
-                        <option value="other">أخرى</option>
-                    </select>
-                </div>
-            </label>
-
-            <label>
                 اسم المؤثر
-                <input name="name" required>
+                <input type="text" name="name" placeholder="اسم المؤثر" required>
             </label>
 
             <label>
-                اسم المستخدم (مثال: @username)
-                <input name="username" placeholder="@username" required>
+                اسم المستخدم
+                <input type="text" name="username" placeholder="@username" required>
             </label>
 
             <label>
                 البريد الإلكتروني
-                <input type="email" name="email" required>
+                <input type="email" name="email" placeholder="example@email.com" required>
             </label>
 
             <label>
                 رقم التواصل
-                <input name="phone">
+                <input type="tel" name="phone" placeholder="05XXXXXXXX">
             </label>
 
             <label>
                 عدد المتابعين
-                <input type="number" name="followers_count" min="0" placeholder="0">
+                <input type="number" name="followers_count" min="0" placeholder="0" value="0">
             </label>
 
             <label class="full">
@@ -71,19 +57,19 @@
                     💡 كلما زادت النسبة زاد احتمال الفوز بالجائزة (من 1% إلى 100%)
                 </small>
                 <div id="prizesContainer" style="margin-top: 10px;">
-                    <div class="prize-item" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
-                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
-                            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
-                                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+                    <div class="prize-item" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 2px solid #e9ecef;">
+                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
+                            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 80px; text-align: center;">
+                                <span style="font-weight: bold; color: #6A3FA0; font-size: 15px;">%</span>
                             </div>
-                            <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
+                            <button type="button" class="remove-prize-btn" style="background: #dc3545; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; min-width: 70px;">حذف</button>
                         </div>
                     </div>
                 </div>
-                <button type="button" id="addPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #6A3FA0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة</button>
-                <div id="totalPercentage" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-weight: bold; color: #1565c0; text-align: center;">
+                <button type="button" id="addPrizeBtn" style="margin-top: 10px; background: #6A3FA0; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700;">+ إضافة جائزة</button>
+                <div id="totalPercentage" style="margin-top: 10px; padding: 12px; background: #e3f2fd; border-radius: 10px; font-weight: bold; color: #1565c0; text-align: center; font-size: 15px;">
                     المجموع: <span id="totalPercentValue">50</span>% (سيتم تطبيع النسب تلقائياً)
                 </div>
             </label>
@@ -96,6 +82,61 @@
 
 {% block extra_js %}
 <script>
+// Hide platform field if it exists (for cache issues)
+(function() {
+    function hidePlatformField() {
+        // Remove any label containing "المنصة الرئيسية" or "المنصة"
+        const allLabels = document.querySelectorAll('label');
+        allLabels.forEach(label => {
+            const text = (label.textContent || label.innerText || '').trim();
+            if (text.includes('المنصة الرئيسية') || text.includes('المنصة') && text.length < 50) {
+                label.style.display = 'none';
+                label.remove();
+            }
+        });
+        
+        // Remove any select elements with platform
+        const platformSelects = document.querySelectorAll('select[name="platform"], select[id*="platform"], select[id*="Platform"], select[id*="platformSelect"]');
+        platformSelects.forEach(select => {
+            const container = select.closest('label') || select.parentElement || select.closest('div');
+            if (container) {
+                container.style.display = 'none';
+                container.remove();
+            } else {
+                select.style.display = 'none';
+                select.remove();
+            }
+        });
+        
+        // Remove platformContainer divs
+        const platformContainers = document.querySelectorAll('#platformContainer, [id*="platform"], [id*="Platform"]');
+        platformContainers.forEach(container => {
+            const parent = container.closest('label') || container.parentElement;
+            if (parent) {
+                parent.style.display = 'none';
+                parent.remove();
+            } else {
+                container.style.display = 'none';
+                container.remove();
+            }
+        });
+    }
+    
+    // Run immediately
+    hidePlatformField();
+    
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hidePlatformField);
+    } else {
+        hidePlatformField();
+    }
+    
+    // Run after a short delay to catch dynamically added elements
+    setTimeout(hidePlatformField, 100);
+    setTimeout(hidePlatformField, 500);
+})();
+
 /**
  * Show notification message
  */
@@ -164,6 +205,11 @@ function updateTotalPercentage() {
     totalPercentValue.textContent = total;
     
     const totalDiv = document.getElementById('totalPercentage');
+    // Maintain consistent styling
+    totalDiv.style.borderRadius = '10px';
+    totalDiv.style.padding = '12px';
+    totalDiv.style.fontSize = '15px';
+    
     if (total > 0) {
         totalDiv.style.background = '#e3f2fd';
         totalDiv.style.color = '#1565c0';
@@ -178,16 +224,16 @@ function updateTotalPercentage() {
 function addPrizeItem() {
     const prizeItem = document.createElement('div');
     prizeItem.className = 'prize-item';
-    prizeItem.style.cssText = 'margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; position: relative;';
+    prizeItem.style.cssText = 'margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 2px solid #e9ecef; position: relative;';
     
     prizeItem.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
-            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
-                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
+            <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 80px; text-align: center;">
+                <span style="font-weight: bold; color: #6A3FA0; font-size: 15px;">%</span>
             </div>
-            <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
+            <button type="button" class="remove-prize-btn" style="background: #dc3545; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; min-width: 70px;">حذف</button>
         </div>
     `;
     
@@ -257,13 +303,11 @@ form.addEventListener("submit", async (e) => {
 
     try {
         const formData = new FormData(form);
-        const platformValue = formData.get('platform') || document.querySelector('[name="platform"]')?.value || 'other';
-        const customPlatformValue = formData.get('customPlatform') || '';
         
         const data = {
             name: formData.get('name'),
-            platform: platformValue,
-            customPlatform: platformValue === 'other' ? customPlatformValue : '',
+            platform: 'other',  // Default value
+            customPlatform: '',
             username: formData.get('username'),
             profile_url: formData.get('profile_url'),
             followers_count: formData.get('followers_count') || 0,

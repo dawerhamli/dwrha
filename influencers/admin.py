@@ -18,16 +18,17 @@ class InfluencerAdmin(admin.ModelAdmin):
     """Admin interface for Influencer model"""
     
     list_display = [
-        'id', 'name', 'platform_display', 'username', 'followers_count', 
+        'id', 'name', 'username', 'followers_count', 
         'status_display', 'is_active', 'wheel_link_display', 'registration_link_display', 'created_at_display'
     ]
-    list_filter = ['status', 'is_active', 'platform', 'created_at']
+    list_filter = ['status', 'is_active', 'created_at']
     search_fields = ['name', 'username', 'email', 'phone']
     readonly_fields = ['slug', 'created_at', 'updated_at', 'approved_at', 'registration_link', 'wheel_link']
+    exclude = ['platform', 'custom_platform']
     
     fieldsets = (
         ('المعلومات الأساسية', {
-            'fields': ('name', 'slug', 'platform', 'custom_platform', 'username', 'profile_url')
+            'fields': ('name', 'slug', 'username', 'profile_url')
         }),
         ('معلومات المنصة', {
             'fields': ('followers_count', 'profile_image_url', 'bio')
@@ -74,7 +75,10 @@ class InfluencerAdmin(admin.ModelAdmin):
     def created_at_display(self, obj):
         """Display created at in readable format"""
         if obj.created_at:
-            return obj.created_at.strftime('%Y-%m-%d %H:%M')
+            val = obj.created_at
+            if hasattr(val, 'strftime'):
+                return val.strftime('%Y-%m-%d %H:%M')
+            return str(val)[:16] if val else '-'
         return '-'
     created_at_display.short_description = 'تاريخ الإنشاء'
     
@@ -86,7 +90,8 @@ class InfluencerAdmin(admin.ModelAdmin):
     def registration_link(self, obj):
         """Display registration link for participants"""
         if obj.id and obj.is_active:
-            url = reverse('influencers:register_participant', kwargs={'slug': obj.slug})
+            # Use encrypted token or fallback to property
+            url = obj.registration_url
             return format_html(
                 '<div style="margin-bottom: 10px;">'
                 '<strong style="display: block; margin-bottom: 5px;">رابط التسجيل للمشاركين:</strong>'
@@ -100,7 +105,8 @@ class InfluencerAdmin(admin.ModelAdmin):
     def wheel_link(self, obj):
         """Display wheel game link"""
         if obj.id and obj.is_active:
-            url = reverse('influencers:play_wheel', kwargs={'slug': obj.slug})
+            # Use encrypted token or fallback to property
+            url = obj.wheel_url
             return format_html(
                 '<div>'
                 '<strong style="display: block; margin-bottom: 5px;">رابط العجلة (اختيار الفائز):</strong>'
@@ -114,7 +120,14 @@ class InfluencerAdmin(admin.ModelAdmin):
     def wheel_link_display(self, obj):
         """Display wheel link in list view"""
         if obj.id and obj.is_active:
-            url = reverse('influencers:play_wheel', kwargs={'slug': obj.slug})
+            # Use encrypted token
+            from .utils import encrypt_slug
+            token = encrypt_slug(obj.slug)
+            if token:
+                url = reverse('influencers:play_wheel', kwargs={'token': token})
+            else:
+                # Fallback to using wheel_url property
+                url = obj.wheel_url
             return format_html(
                 '<a href="{}" target="_blank" style="color: #FF6B9D; font-weight: bold;" title="{}">🎡 رابط العجلة</a>',
                 url, url
@@ -125,7 +138,14 @@ class InfluencerAdmin(admin.ModelAdmin):
     def registration_link_display(self, obj):
         """Display registration link in list view"""
         if obj.id and obj.is_active:
-            url = reverse('influencers:register_participant', kwargs={'slug': obj.slug})
+            # Use encrypted token
+            from .utils import encrypt_slug
+            token = encrypt_slug(obj.slug)
+            if token:
+                url = reverse('influencers:register_participant', kwargs={'token': token})
+            else:
+                # Fallback to using registration_url property
+                url = obj.registration_url
             return format_html(
                 '<a href="{}" target="_blank" style="color: #6A3FA0; font-weight: bold;" title="{}">📝 رابط التسجيل</a>',
                 url, url
@@ -161,7 +181,6 @@ class InfluencerAdmin(admin.ModelAdmin):
         headers = [
             'ID',
             'الاسم',
-            'المنصة الرئيسية',
             'اسم المستخدم',
             'عدد المتابعين',
             'البريد الإلكتروني',
@@ -195,35 +214,29 @@ class InfluencerAdmin(admin.ModelAdmin):
             
             ws.cell(row=row_num, column=1, value=influencer.id)
             ws.cell(row=row_num, column=2, value=influencer.name)
-            # Get platform display - use model method or custom_platform
-            if influencer.platform == 'other' and influencer.custom_platform:
-                platform_display = influencer.custom_platform
-            else:
-                platform_display = influencer.get_platform_display()
-            ws.cell(row=row_num, column=3, value=platform_display)
-            ws.cell(row=row_num, column=4, value=influencer.username or '-')
-            ws.cell(row=row_num, column=5, value=influencer.followers_count or 0)
-            ws.cell(row=row_num, column=6, value=influencer.email or '-')
-            ws.cell(row=row_num, column=7, value=influencer.phone or '-')
-            ws.cell(row=row_num, column=8, value=influencer.get_status_display())
-            ws.cell(row=row_num, column=9, value='نعم' if influencer.is_active else 'لا')
-            ws.cell(row=row_num, column=10, value=len(prizes))
-            ws.cell(row=row_num, column=11, value=participants_count)
+            ws.cell(row=row_num, column=3, value=influencer.username or '-')
+            ws.cell(row=row_num, column=4, value=influencer.followers_count or 0)
+            ws.cell(row=row_num, column=5, value=influencer.email or '-')
+            ws.cell(row=row_num, column=6, value=influencer.phone or '-')
+            ws.cell(row=row_num, column=7, value=influencer.get_status_display())
+            ws.cell(row=row_num, column=8, value='نعم' if influencer.is_active else 'لا')
+            ws.cell(row=row_num, column=9, value=len(prizes))
+            ws.cell(row=row_num, column=10, value=participants_count)
             
             if influencer.created_at:
-                ws.cell(row=row_num, column=12, value=influencer.created_at.strftime('%Y-%m-%d %H:%M'))
+                ws.cell(row=row_num, column=11, value=influencer.created_at.strftime('%Y-%m-%d %H:%M'))
+            else:
+                ws.cell(row=row_num, column=11, value='-')
+            
+            if influencer.updated_at:
+                ws.cell(row=row_num, column=12, value=influencer.updated_at.strftime('%Y-%m-%d %H:%M'))
             else:
                 ws.cell(row=row_num, column=12, value='-')
             
-            if influencer.updated_at:
-                ws.cell(row=row_num, column=13, value=influencer.updated_at.strftime('%Y-%m-%d %H:%M'))
+            if influencer.approved_at:
+                ws.cell(row=row_num, column=13, value=influencer.approved_at.strftime('%Y-%m-%d %H:%M'))
             else:
                 ws.cell(row=row_num, column=13, value='-')
-            
-            if influencer.approved_at:
-                ws.cell(row=row_num, column=14, value=influencer.approved_at.strftime('%Y-%m-%d %H:%M'))
-            else:
-                ws.cell(row=row_num, column=14, value='-')
             
             row_num += 1
         
@@ -327,7 +340,10 @@ class ParticipantAdmin(admin.ModelAdmin):
     def created_at_display(self, obj):
         """Display created at in readable format"""
         if obj.created_at:
-            return obj.created_at.strftime('%Y-%m-%d %H:%M')
+            val = obj.created_at
+            if hasattr(val, 'strftime'):
+                return val.strftime('%Y-%m-%d %H:%M')
+            return str(val)[:16] if val else '-'
         return '-'
     created_at_display.short_description = 'تاريخ التسجيل'
     

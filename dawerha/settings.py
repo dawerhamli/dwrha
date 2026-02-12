@@ -12,10 +12,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 
+# Slug signing salt for URL encryption
+SLUG_SIGNING_SALT = config('SLUG_SIGNING_SALT', default='dawerha-slug-signing-secure-2025')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',') if h.strip()]
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o.strip()]
 
 # Application definition
 INSTALLED_APPS = [
@@ -63,10 +67,18 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dawerha.wsgi.application'
 
 # Database
+# Default: PostgreSQL (recommended for production/high load).
+# You can still override any value via environment variables:
+#   DB_ENGINE (e.g. django.db.backends.sqlite3 for local-only SQLite)
+#   DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': config('DB_NAME', default='dawerha'),
+        'USER': config('DB_USER', default='postgres'),
+        'PASSWORD': config('DB_PASSWORD', default='postgres'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 

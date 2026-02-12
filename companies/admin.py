@@ -304,7 +304,8 @@ class CompanyAdmin(admin.ModelAdmin):
     
     def company_link(self, obj):
         if obj.slug:
-            url = reverse('game:play', kwargs={'slug': obj.slug})
+            # Use the same encrypted URL that the model generates
+            url = obj.company_url
             full_url = f'{url}'
             return format_html(
                 '<a href="{}" target="_blank" style="color: #6A3FA0; font-weight: bold;">🎡 {}</a><br>'

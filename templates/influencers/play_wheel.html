@@ -40,7 +40,7 @@
 {% block extra_js %}
 <script>
 // Game data
-const influencerSlug = "{{ influencer.slug }}";
+const influencerToken = "{{ encrypted_token }}";
 const prizes = {{ prizes|safe }}.map(p => (p || '').toString().trim()).filter(p => p);
 const colors = {{ colors|safe }};
 
@@ -163,7 +163,7 @@ async function spinWheel() {
     resultText.innerHTML = '';
 
     try {
-        const response = await fetch(`/influencers/spin/${influencerSlug}/`, {
+        const response = await fetch(`/influencers/spin/${influencerToken}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -272,7 +272,7 @@ async function spinWheel() {
  */
 async function updateParticipantsCount() {
     try {
-        const response = await fetch(`/influencers/participants-count/${influencerSlug}/`);
+        const response = await fetch(`/influencers/participants-count/${influencerToken}/`);
         const result = await response.json();
         
         if (result.success) {

@@ -177,7 +177,14 @@ class Influencer(models.Model):
     def influencer_url(self):
         """Generate influencer game URL"""
         from django.urls import reverse
-        return reverse('game:play', kwargs={'slug': self.slug})
+        from .utils import encrypt_slug
+
+        # Use the same encrypted token mechanism as companies
+        token = encrypt_slug(self.slug)
+        if token:
+            return reverse('game:play', kwargs={'token': token})
+        # Fallback to plain slug if encryption ever fails
+        return reverse('game:play', kwargs={'token': self.slug})
     
     def approve(self):
         """Approve the influencer"""
@@ -212,15 +219,25 @@ class Influencer(models.Model):
     
     @property
     def registration_url(self):
-        """Generate registration page URL for participants"""
+        """Generate registration page URL for participants with encrypted token"""
         from django.urls import reverse
-        return reverse('influencers:register_participant', kwargs={'slug': self.slug})
+        from .utils import encrypt_slug
+        token = encrypt_slug(self.slug)
+        if token:
+            return reverse('influencers:register_participant', kwargs={'token': token})
+        # Fallback to slug if encryption fails
+        return reverse('influencers:register_participant', kwargs={'token': self.slug})
     
     @property
     def wheel_url(self):
-        """Generate wheel game URL"""
+        """Generate wheel game URL with encrypted token"""
         from django.urls import reverse
-        return reverse('influencers:play_wheel', kwargs={'slug': self.slug})
+        from .utils import encrypt_slug
+        token = encrypt_slug(self.slug)
+        if token:
+            return reverse('influencers:play_wheel', kwargs={'token': token})
+        # Fallback to slug if encryption fails
+        return reverse('influencers:play_wheel', kwargs={'token': self.slug})
 
 
 class Participant(models.Model):
@@ -239,7 +256,8 @@ class Participant(models.Model):
     )
     phone = models.CharField(
         max_length=15,
-        verbose_name="رقم الجوال"
+        verbose_name="رقم الجوال",
+        db_index=True  # لتحسين البحث ومنع التكرار بسرعة
     )
     social_media_account = models.CharField(
         max_length=200,
@@ -259,6 +277,50 @@ class Participant(models.Model):
         verbose_name = "مشارك"
         verbose_name_plural = "المشاركون"
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['influencer', 'phone'],
+                name='unique_influencer_phone'
+            ),
+        ]
     
     def __str__(self):
         return f"{self.name} - {self.influencer.name}"
+
+
+class InfluencerWinner(models.Model):
+    """
+    Stores winners for an influencer's wheel game.
+
+    Each record represents one prize that has been won and must not be repeated.
+    """
+    influencer = models.ForeignKey(
+        Influencer,
+        on_delete=models.CASCADE,
+        related_name='winners',
+        verbose_name="المؤثر"
+    )
+    participant = models.ForeignKey(
+        Participant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='wins',
+        verbose_name="الفائز"
+    )
+    prize = models.CharField(
+        max_length=255,
+        verbose_name="الجائزة"
+    )
+    created_at = models.DateTimeField(
+        default=timezone.now,
+        verbose_name="تاريخ الفوز"
+    )
+
+    class Meta:
+        verbose_name = "فائز (مؤثر)"
+        verbose_name_plural = "الفائزون (مؤثرين)"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.prize} - {self.influencer.name}"

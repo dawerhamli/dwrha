@@ -98,20 +98,6 @@
         {% csrf_token %}
         <div class="grid">
             <label>
-                المنصة الرئيسية
-                <div id="influencerPlatformContainer" style="width: 100%;">
-                    <select name="platform" id="influencerPlatformSelect" required style="width: 100%;">
-                        <option value="instagram">إنستغرام</option>
-                        <option value="tiktok">تيك توك</option>
-                        <option value="youtube">يوتيوب</option>
-                        <option value="snapchat">سناب شات</option>
-                        <option value="twitter">تويتر</option>
-                        <option value="other">أخرى</option>
-                    </select>
-                </div>
-            </label>
-
-            <label>
                 اسم المؤثر
                 <input name="name" required>
             </label>
@@ -467,45 +453,71 @@ if (companyForm) {
 
 // ============= INFLUENCER FORM JAVASCRIPT =============
 
-/**
- * Handle influencer platform selection change
- */
-const influencerPlatformSelect = document.getElementById("influencerPlatformSelect");
-const influencerPlatformContainer = document.getElementById("influencerPlatformContainer");
-
-if (influencerPlatformSelect) {
-    influencerPlatformSelect.addEventListener("change", (e) => {
-        if (e.target.value === "other") {
-            const selectElement = e.target;
-            const inputElement = document.createElement("input");
-            inputElement.type = "text";
-            inputElement.name = "customPlatform";
-            inputElement.id = "influencerCustomPlatformInput";
-            inputElement.required = true;
-            inputElement.placeholder = "اكتب اسم المنصة (مثال: لينكد إن، بينتريست...)";
-            inputElement.style.width = '100%';
-            inputElement.style.height = selectElement.offsetHeight + 'px';
-            inputElement.style.padding = window.getComputedStyle(selectElement).padding;
-            inputElement.style.border = window.getComputedStyle(selectElement).border;
-            inputElement.style.borderRadius = window.getComputedStyle(selectElement).borderRadius;
-            inputElement.style.fontSize = window.getComputedStyle(selectElement).fontSize;
-            inputElement.style.fontFamily = window.getComputedStyle(selectElement).fontFamily;
-            inputElement.style.boxSizing = 'border-box';
-            inputElement.style.display = 'block';
+// Hide platform field if it exists (for cache issues)
+(function() {
+    function hideInfluencerPlatformField() {
+        // Remove any label containing "المنصة الرئيسية" or "المنصة" in influencer form
+        const influencerForm = document.getElementById('influencerForm');
+        if (influencerForm) {
+            const allLabels = influencerForm.querySelectorAll('label');
+            allLabels.forEach(label => {
+                const text = (label.textContent || label.innerText || '').trim();
+                if (text.includes('المنصة الرئيسية') || (text.includes('المنصة') && text.length < 50)) {
+                    label.style.display = 'none';
+                    label.remove();
+                }
+            });
             
-            influencerPlatformContainer.innerHTML = '';
-            influencerPlatformContainer.appendChild(inputElement);
+            // Remove any select elements with platform
+            const platformSelects = influencerForm.querySelectorAll('select[name="platform"], select[id*="platform"], select[id*="Platform"], select[id*="influencerPlatform"]');
+            platformSelects.forEach(select => {
+                const container = select.closest('label') || select.parentElement || select.closest('div');
+                if (container) {
+                    container.style.display = 'none';
+                    container.remove();
+                } else {
+                    select.style.display = 'none';
+                    select.remove();
+                }
+            });
             
-            const hiddenInput = document.createElement("input");
-            hiddenInput.type = "hidden";
-            hiddenInput.name = "platform";
-            hiddenInput.value = "other";
-            influencerPlatformContainer.appendChild(hiddenInput);
-            
-            inputElement.focus();
+            // Remove platformContainer divs
+            const platformContainers = influencerForm.querySelectorAll('#influencerPlatformContainer, [id*="platform"], [id*="Platform"]');
+            platformContainers.forEach(container => {
+                const parent = container.closest('label') || container.parentElement;
+                if (parent) {
+                    parent.style.display = 'none';
+                    parent.remove();
+                } else {
+                    container.style.display = 'none';
+                    container.remove();
+                }
+            });
         }
-    });
-}
+    }
+    
+    // Run immediately
+    hideInfluencerPlatformField();
+    
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideInfluencerPlatformField);
+    } else {
+        hideInfluencerPlatformField();
+    }
+    
+    // Run after a short delay to catch dynamically added elements
+    setTimeout(hideInfluencerPlatformField, 100);
+    setTimeout(hideInfluencerPlatformField, 500);
+    
+    // Also run when influencer form is shown
+    const showInfluencerBtn = document.getElementById('showInfluencerForm');
+    if (showInfluencerBtn) {
+        showInfluencerBtn.addEventListener('click', () => {
+            setTimeout(hideInfluencerPlatformField, 100);
+        });
+    }
+})();
 
 /**
  * Influencer prize management (without percentages)
@@ -583,13 +595,10 @@ if (influencerForm) {
 
         try {
             const formData = new FormData(influencerForm);
-            const platformValue = formData.get('platform') || document.querySelector('#influencerPlatformContainer [name="platform"]')?.value || 'other';
-            const customPlatformValue = formData.get('customPlatform') || '';
-            
             const data = {
                 name: formData.get('name'),
-                platform: platformValue,
-                customPlatform: platformValue === 'other' ? customPlatformValue : '',
+                platform: 'other',  // Default value
+                customPlatform: '',
                 username: formData.get('username'),
                 followers_count: formData.get('followers_count') || 0,
                 email: formData.get('email'),

@@ -213,7 +213,7 @@
 <script>
 {% if is_active %}
 // Game data
-const companySlug = "{{ company.slug }}";
+const companyToken = "{{ encrypted_token }}";
 // Normalize prizes (trim whitespace) to ensure matching with server
 const prizes = {{ prizes|safe }}.map(p => (p || '').toString().trim()).filter(p => p);
 const colors = {{ colors|safe }};
@@ -382,7 +382,7 @@ async function spinWheel() {
 
     try {
         // Get the prize from server FIRST
-        const response = await fetch(`/game/spin/${companySlug}/`, {
+        const response = await fetch(`/game/spin/${companyToken}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

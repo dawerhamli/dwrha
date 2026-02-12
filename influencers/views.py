@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import TemplateView
+from django.db import IntegrityError
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -13,7 +14,8 @@ from datetime import datetime
 import json
 import random
 import logging
-from .models import Influencer, Participant
+from .models import Influencer, Participant, InfluencerWinner
+from .utils import decrypt_slug
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +56,7 @@ def register_influencer(request):
         
         # Extract form data
         name = data.get('name', '').strip()
-        platform = data.get('platform', '')
+        platform = data.get('platform', 'other')  # Default to 'other' if not provided
         custom_platform = data.get('customPlatform', '').strip()
         username = data.get('username', '').strip()
         profile_url = data.get('profile_url', '').strip()
@@ -70,12 +72,6 @@ def register_influencer(request):
             return JsonResponse({
                 'success': False,
                 'message': 'اسم المؤثر مطلوب'
-            }, status=400)
-        
-        if not platform:
-            return JsonResponse({
-                'success': False,
-                'message': 'المنصة مطلوبة'
             }, status=400)
         
         if not username:
@@ -245,12 +241,23 @@ def export_participants_excel(request, influencer_id):
     return response
 
 
-def register_participant_page(request, slug):
+def register_participant_page(request, token):
     """Page for participants to register"""
+    # Decrypt the token to get the slug
+    slug = decrypt_slug(token)
+    if not slug:
+        from django.http import Http404
+        raise Http404("Invalid or expired link")
+    
     influencer = get_object_or_404(Influencer, slug=slug)
+    
+    # Get encrypted token for the form submission
+    from .utils import encrypt_slug
+    encrypted_token = encrypt_slug(slug) or token
     
     context = {
         'influencer': influencer,
+        'encrypted_token': encrypted_token,
     }
     
     return render(request, 'influencers/register_participant.html', context)
@@ -258,9 +265,17 @@ def register_participant_page(request, slug):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def register_participant(request, slug):
+def register_participant(request, token):
     """Register a new participant"""
     try:
+        # Decrypt the token to get the slug
+        slug = decrypt_slug(token)
+        if not slug:
+            return JsonResponse({
+                'success': False,
+                'message': 'رابط غير صحيح أو منتهي الصلاحية'
+            }, status=404)
+        
         influencer = get_object_or_404(Influencer, slug=slug)
         data = json.loads(request.body)
         
@@ -294,14 +309,29 @@ def register_participant(request, slug):
                 'message': 'المدينة مطلوبة'
             }, status=400)
         
-        # Create participant
-        participant = Participant.objects.create(
-            influencer=influencer,
-            name=name,
-            phone=phone,
-            social_media_account=social_media_account,
-            city=city
-        )
+        # Prevent duplicate registration for the same influencer:
+        # - نفس رقم الجوال لا يمكنه التسجيل مرتين
+        if Participant.objects.filter(influencer=influencer, phone=phone).exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'هذا الرقم مسجل مسبقاً في السحب'
+            }, status=400)
+
+        # Create participant (DB also enforces uniqueness on (influencer, phone))
+        try:
+            participant = Participant.objects.create(
+                influencer=influencer,
+                name=name,
+                phone=phone,
+                social_media_account=social_media_account,
+                city=city
+            )
+        except IntegrityError:
+            # Handle race condition where the same phone registered in parallel
+            return JsonResponse({
+                'success': False,
+                'message': 'هذا الرقم مسجل مسبقاً في السحب'
+            }, status=400)
         
         return JsonResponse({
             'success': True,
@@ -321,8 +351,14 @@ def register_participant(request, slug):
         }, status=500)
 
 
-def play_wheel_page(request, slug):
+def play_wheel_page(request, token):
     """Wheel game page for influencer"""
+    # Decrypt the token to get the slug
+    slug = decrypt_slug(token)
+    if not slug:
+        from django.http import Http404
+        raise Http404("Invalid or expired link")
+    
     influencer = get_object_or_404(Influencer, slug=slug)
     
     prizes = influencer.get_prizes_list()
@@ -331,20 +367,33 @@ def play_wheel_page(request, slug):
     # Get participants count
     participants_count = influencer.participants.count()
     
+    # Get encrypted token for API calls
+    from .utils import encrypt_slug
+    encrypted_token = encrypt_slug(slug) or token
+    
     context = {
         'influencer': influencer,
         'prizes': prizes,
         'colors': colors,
         'participants_count': participants_count,
+        'encrypted_token': encrypted_token,
     }
     
     return render(request, 'influencers/play_wheel.html', context)
 
 
 @require_http_methods(["GET"])
-def get_participants_count(request, slug):
+def get_participants_count(request, token):
     """Get current participants count"""
     try:
+        # Decrypt the token to get the slug
+        slug = decrypt_slug(token)
+        if not slug:
+            return JsonResponse({
+                'success': False,
+                'message': 'رابط غير صحيح أو منتهي الصلاحية'
+            }, status=404)
+        
         influencer = get_object_or_404(Influencer, slug=slug)
         count = influencer.participants.count()
         return JsonResponse({
@@ -361,9 +410,23 @@ def get_participants_count(request, slug):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def spin_wheel(request, slug):
-    """Handle wheel spin - select random prize and random winner"""
+def spin_wheel(request, token):
+    """Handle wheel spin - select random prize and random winner
+
+    ملاحظة مهمة:
+    - الجائزة التي تُسحب لا تتكرر مرة أخرى لنفس المؤثر.
+    - عدد الجوائز محدود؛ عند انتهاء الجوائز، يتم إرجاع رسالة خطأ مناسبة.
+    - يتم تخزين الجوائز التي تم استخدامها في حقل notes كـ JSON تحت المفتاح "used_prizes".
+    """
     try:
+        # Decrypt the token to get the slug
+        slug = decrypt_slug(token)
+        if not slug:
+            return JsonResponse({
+                'success': False,
+                'message': 'رابط غير صحيح أو منتهي الصلاحية'
+            }, status=404)
+        
         influencer = get_object_or_404(Influencer, slug=slug)
         
         # Check if influencer is active
@@ -382,17 +445,30 @@ def spin_wheel(request, slug):
                 'message': 'لا يوجد مسجلين بعد'
             }, status=400)
         
-        # Get prizes
-        prizes = influencer.get_prizes_list()
-        
+        # Get all configured prizes
+        prizes = [str(p) for p in influencer.get_prizes_list()]
         if not prizes:
             return JsonResponse({
                 'success': False,
                 'message': 'لا توجد جوائز متاحة'
             }, status=400)
-        
-        # Select random prize
-        selected_prize = random.choice(prizes)
+
+        # Load used prizes from InfluencerWinner records
+        used_prizes = set(
+            InfluencerWinner.objects.filter(influencer=influencer).values_list('prize', flat=True)
+        )
+
+        # Filter available prizes (those that haven't been used yet)
+        available_prizes = [p for p in prizes if p not in used_prizes]
+
+        if not available_prizes:
+            return JsonResponse({
+                'success': False,
+                'message': 'انتهت جميع الجوائز، لا توجد جوائز متبقية'
+            }, status=400)
+
+        # Select random prize from remaining prizes only
+        selected_prize = random.choice(available_prizes)
         
         # Select random participant (winner)
         winner = random.choice(list(participants))
@@ -410,7 +486,17 @@ def spin_wheel(request, slug):
             social_encrypted = social_encrypted[:-3] + '***'
         elif social_encrypted and len(social_encrypted) <= 3:
             social_encrypted = '***'
-        
+
+        # Persist this win so the same prize is not used again for this influencer
+        try:
+            InfluencerWinner.objects.create(
+                influencer=influencer,
+                participant=winner,
+                prize=selected_prize,
+            )
+        except Exception as save_exc:
+            logger.error(f"Error saving influencer winner for influencer {influencer.id}: {save_exc}")
+
         return JsonResponse({
             'success': True,
             'prize': selected_prize,

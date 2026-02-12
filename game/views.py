@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from companies.models import Company
+from companies.utils import decrypt_slug
 from .models import GameSpin
 
 # Set up logger
@@ -102,8 +103,14 @@ def select_weighted_prize(company, prizes):
     return selected_prize
 
 
-def play_game(request, slug):
+def play_game(request, token):
     """Game page view"""
+    # Decrypt the token to get the slug
+    slug = decrypt_slug(token)
+    if not slug:
+        from django.http import Http404
+        raise Http404("Invalid or expired link")
+    
     company = get_object_or_404(Company, slug=slug)
     
     # Get and normalize prizes (remove extra spaces) to ensure consistency
@@ -120,6 +127,10 @@ def play_game(request, slug):
         logger.debug(f"  Colors: {colors}")
         logger.debug(f"  Is active: {company.is_currently_active}")
     
+    # Get encrypted token for API calls
+    from companies.utils import encrypt_slug
+    encrypted_token = encrypt_slug(slug) or token
+    
     # Always show the play page, but pass activation status
     context = {
         'company': company,
@@ -127,7 +138,8 @@ def play_game(request, slug):
         'colors': colors,
         'status': company.status,
         'is_active': company.is_currently_active,
-        'activation_end_time': company.activation_end_time
+        'activation_end_time': company.activation_end_time,
+        'encrypted_token': encrypted_token,
     }
     
     return render(request, 'game/play.html', context)
@@ -135,9 +147,17 @@ def play_game(request, slug):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def spin_wheel(request, slug):
+def spin_wheel(request, token):
     """Handle wheel spin"""
     try:
+        # Decrypt the token to get the slug
+        slug = decrypt_slug(token)
+        if not slug:
+            return JsonResponse({
+                'success': False,
+                'message': 'رابط غير صحيح أو منتهي الصلاحية'
+            }, status=404)
+        
         company = get_object_or_404(Company, slug=slug)
         
         # Check if company is currently active (allow pending companies if they are active)
@@ -236,8 +256,14 @@ def spin_wheel(request, slug):
         }, status=500)
 
 
-def game_dashboard(request, slug):
+def game_dashboard(request, token):
     """Game dashboard for company"""
+    # Decrypt the token to get the slug
+    slug = decrypt_slug(token)
+    if not slug:
+        from django.http import Http404
+        raise Http404("Invalid or expired link")
+    
     company = get_object_or_404(Company, slug=slug)
     
     # Get statistics

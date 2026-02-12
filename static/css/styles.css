@@ -142,11 +142,73 @@ body {
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
+  align-items: start; /* Align items to start for consistent layout */
 }
 
 .grid .full {
   grid-column: 1 / -1;
+}
+
+/* Ensure full-width labels have consistent styling */
+.grid .full label {
+  min-height: auto; /* Remove min-height for full-width labels */
+}
+
+/* Consistent form field styling */
+.grid label {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.grid label input,
+.grid label select,
+.grid label textarea {
+  margin-top: 0;
+  flex: 1;
+}
+
+/* Ensure all inputs in grid have same height */
+.grid label input[type="text"],
+.grid label input[type="email"],
+.grid label input[type="tel"],
+.grid label input[type="number"],
+.grid label input[type="url"],
+.grid label select {
+  height: 44px;
+  line-height: 1.5;
+}
+
+/* Prize items styling for consistency */
+.prize-item input.prize-name {
+  min-height: 44px;
+  padding: 12px 14px;
+  font-size: 15px;
+}
+
+.prize-item input.prize-percentage {
+  min-height: 44px;
+  padding: 12px;
+  font-size: 15px;
+}
+
+.prize-item .remove-prize-btn {
+  min-height: 44px;
+  padding: 12px 16px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#addPrizeBtn {
+  min-height: 44px;
+  padding: 12px 18px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Ensure custom type field appears in proper grid position */
@@ -158,18 +220,36 @@ body {
 label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  min-height: 70px; /* Ensure consistent height */
+}
+
+label > *:first-child {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
 
 input, select, textarea {
-  padding: 12px;
+  padding: 12px 14px;
   border: 2px solid #e0e0e0;
   border-radius: 10px;
   font-family: inherit;
+  font-size: 15px;
   transition: all 0.3s ease;
   width: 100%;
   box-sizing: border-box;
+  min-height: 44px; /* Consistent height for all inputs */
+  background-color: #fff;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #999;
+  opacity: 0.7;
 }
 
 /* Ensure type container and select are full width */

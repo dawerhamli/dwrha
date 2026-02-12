@@ -1,3 +1,0 @@
-# This file ensures the staticfiles directory is tracked by git
-# Will be populated by collectstatic command
-
