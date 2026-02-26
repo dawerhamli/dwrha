@@ -14,27 +14,262 @@
 </header>
 
 <!-- Main Content -->
-<main class="stage">
-    <!-- Statistics Boxes -->
-    <div class="stats-container fade-in" style="display: flex; gap: 20px; justify-content: center; margin: 30px auto; max-width: 800px; flex-wrap: wrap;">
-        <div class="stat-box" style="background: linear-gradient(135deg, #6A3FA0 0%, #8C59C4 100%); color: white; padding: 25px 40px; border-radius: 15px; box-shadow: 0 8px 20px rgba(106, 63, 160, 0.3); text-align: center; min-width: 200px;">
-            <div style="font-size: 48px; font-weight: bold; margin-bottom: 10px;" id="participantsCount">{{ participants_count }}</div>
-            <div style="font-size: 18px; opacity: 0.9;">👥 عدد المشاركين</div>
+<main class="stage play-wheel-stage">
+    <!-- Statistics Boxes - ترحيبية -->
+    <div class="stats-container welcome-stats">
+        <div class="stat-box stat-box-1">
+            <div class="stat-number" id="participantsCount">{{ participants_count }}</div>
+            <div class="stat-label">👥 عدد المشاركين</div>
         </div>
-        <div class="stat-box" style="background: linear-gradient(135deg, #FF6B9D 0%, #FF8B5A 100%); color: white; padding: 25px 40px; border-radius: 15px; box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3); text-align: center; min-width: 200px;">
-            <div style="font-size: 48px; font-weight: bold; margin-bottom: 10px;" id="prizesCount">{{ prizes|length }}</div>
-            <div style="font-size: 18px; opacity: 0.9;">🎁 عدد الجوائز</div>
+        <div class="stat-box stat-box-prizes stat-box-2">
+            <div class="stat-number" id="prizesCount">{{ prizes|length }}</div>
+            <div class="stat-label">🎁 عدد الجوائز</div>
         </div>
     </div>
+
+    <!-- Prize order control -->
+    <section class="prize-order-card">
+        <div class="prize-order-header">
+            <h2>ترتيب ظهور الجوائز على العجلة</h2>
+            <p class="prize-order-hint">
+                يمكنك سحب الجوائز للأعلى أو الأسفل لتغيير ترتيب ظهورها على العجلة.
+                إذا لم تغيّر الترتيب أو عطّلت الخيار، يتم توزيع الجوائز عشوائياً.
+            </p>
+        </div>
+        <label class="prize-order-toggle">
+            <input type="checkbox" id="enablePrizeOrder" checked>
+            <span>تفعيل ترتيب الجوائز (بدلاً من التوزيع العشوائي على العجلة)</span>
+        </label>
+        <ul id="prizeOrderList" class="prize-order-list">
+            <!-- يتم تعبئته من JavaScript -->
+        </ul>
+    </section>
     
     <!-- Wheel Section -->
-    <div id="wheelSection" class="wheel-wrap fade-in" style="margin-top:30px;">
-        <div class="needle"></div>
-        <canvas id="wheelCanvas" width="560" height="560"></canvas>
-        <button id="spinBtn" class="btn primary">دور العجلة 🎡</button>
-        <div id="resultText" class="result"></div>
+    <div id="wheelSection" class="wheel-wrap welcome-wheel">
+        <div class="wheel-container">
+            <div class="needle"></div>
+            <canvas id="wheelCanvas" width="560" height="560"></canvas>
+        </div>
+        <button id="spinBtn" class="btn primary spin-btn welcome-spin-btn">دور العجلة 🎡</button>
+        <div id="resultText" class="result-area"></div>
     </div>
 </main>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ترحيبية - أنيميشن دخول سريع */
+@keyframes welcomeStat1 {
+  0% { opacity: 0; transform: translateX(-80px) scale(0.5); }
+  60% { opacity: 1; transform: translateX(8px) scale(1.08); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes welcomeStat2 {
+  0% { opacity: 0; transform: translateX(80px) scale(0.5); }
+  60% { opacity: 1; transform: translateX(-8px) scale(1.08); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes welcomeWheel {
+  0% { opacity: 0; transform: scale(0.3); filter: blur(8px); }
+  50% { opacity: 1; transform: scale(1.05); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes welcomeNumber {
+  0% { opacity: 0; transform: scale(0) rotate(-10deg); }
+  70% { opacity: 1; transform: scale(1.15) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes welcomeGlow {
+  0% { box-shadow: 0 8px 20px rgba(106, 63, 160, 0.3); }
+  40% { box-shadow: 0 14px 40px rgba(106, 63, 160, 0.5), 0 0 25px rgba(106, 63, 160, 0.25); }
+  100% { box-shadow: 0 8px 20px rgba(106, 63, 160, 0.3); }
+}
+@keyframes welcomeGlowPrizes {
+  0% { box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3); }
+  40% { box-shadow: 0 14px 40px rgba(255, 107, 157, 0.5), 0 0 25px rgba(255, 107, 157, 0.25); }
+  100% { box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3); }
+}
+@keyframes welcomeBtn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.play-wheel-stage .stats-container { display: flex; gap: 20px; justify-content: center; margin: 30px auto; max-width: 800px; flex-wrap: wrap; }
+.play-wheel-stage .stat-box { background: linear-gradient(135deg, #6A3FA0 0%, #8C59C4 100%); color: white; padding: 25px 40px; border-radius: 15px; text-align: center; min-width: 180px; opacity: 0; }
+.play-wheel-stage .stat-box-1 { animation: welcomeStat1 0.5s ease-out forwards, welcomeGlow 1.5s ease-in-out 0.5s; }
+.play-wheel-stage .stat-box-2 { animation: welcomeStat2 0.5s ease-out 0.1s forwards, welcomeGlowPrizes 1.5s ease-in-out 0.6s; }
+.play-wheel-stage .stat-box-prizes { background: linear-gradient(135deg, #FF6B9D 0%, #FF8B5A 100%); }
+.play-wheel-stage .stat-number { font-size: clamp(36px, 6vw, 48px); font-weight: 900; margin-bottom: 8px; animation: welcomeNumber 0.6s ease-out 0.2s both; }
+.play-wheel-stage .stat-box-2 .stat-number { animation-delay: 0.3s; }
+.play-wheel-stage .stat-label { font-size: clamp(14px, 2.5vw, 18px); opacity: 0.95; }
+.play-wheel-stage .wheel-wrap { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.play-wheel-stage .wheel-wrap.welcome-wheel .wheel-container { animation: welcomeWheel 0.6s ease-out 0.35s both; }
+.play-wheel-stage .wheel-container { position: relative; width: min(92vw, 520px); max-width: 520px; aspect-ratio: 1; }
+.play-wheel-stage .wheel-container canvas { width: 100% !important; height: 100% !important; max-width: 100%; border-radius: 50%; display: block; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+.play-wheel-stage .needle { position: absolute; top: -8px; right: 50%; transform: translateX(50%); width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 24px solid #2F1D52; z-index: 5; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+.play-wheel-stage .spin-btn { font-size: clamp(16px, 3vw, 20px); padding: 16px 36px; font-weight: 800; min-width: 200px; }
+.play-wheel-stage .welcome-spin-btn { animation: welcomeBtn 0.4s ease-out 0.7s both; }
+.play-wheel-stage .result-area { width: 100%; max-width: 500px; margin-top: 10px; }
+.play-wheel-stage .result-card { background: #fff; padding: 28px 24px; border-radius: 16px; text-align: center; border: 3px solid #28a745; box-shadow: 0 8px 24px rgba(40, 167, 69, 0.2); }
+.play-wheel-stage .result-card h2 { color: #155724; margin: 0 0 16px; font-size: clamp(22px, 4vw, 28px); font-weight: 900; }
+.play-wheel-stage .result-prize { font-size: clamp(18px, 3vw, 22px); font-weight: 700; color: #155724; margin: 12px 0; }
+.play-wheel-stage .result-winner { background: #f8f9fa; padding: 18px; border-radius: 12px; margin: 18px 0; text-align: right; }
+.play-wheel-stage .result-winner p { margin: 8px 0; font-size: clamp(15px, 2.5vw, 17px); color: #333; font-weight: 600; }
+.play-wheel-stage .spin-again-btn { margin-top: 22px; padding: 18px 40px; font-size: 18px; font-weight: 800; background: linear-gradient(135deg, #6A3FA0 0%, #8C59C4 100%); color: white; border: none; border-radius: 14px; cursor: pointer; box-shadow: 0 6px 20px rgba(106, 63, 160, 0.4); transition: transform 0.2s, box-shadow 0.2s; }
+.play-wheel-stage .spin-again-btn:hover { transform: scale(1.05); box-shadow: 0 8px 28px rgba(106, 63, 160, 0.5); }
+.play-wheel-stage .spin-again-btn:active { transform: scale(0.98); }
+
+/* Prize order list */
+.play-wheel-stage .prize-order-card {
+  margin: 10px auto 0;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 18px 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+}
+.play-wheel-stage .prize-order-header h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #2F1D52;
+}
+.play-wheel-stage .prize-order-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #6c757d;
+}
+.play-wheel-stage .prize-order-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #444;
+}
+.play-wheel-stage .prize-order-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+.play-wheel-stage .prize-order-toggle span {
+  cursor: pointer;
+}
+.play-wheel-stage .prize-order-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.play-wheel-stage .prize-order-list.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.play-wheel-stage .prize-order-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8f9fd;
+  border: 1px solid rgba(106,63,160,0.12);
+}
+.play-wheel-stage .prize-order-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.play-wheel-stage .prize-order-index {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #6A3FA0;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+.play-wheel-stage .prize-order-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2F1D52;
+}
+.play-wheel-stage .prize-order-actions {
+  display: flex;
+  gap: 4px;
+}
+.play-wheel-stage .prize-move-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+  background: #eee;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.1s;
+}
+.play-wheel-stage .prize-move-btn:hover {
+  background: #ddd;
+  transform: translateY(-1px);
+}
+.play-wheel-stage .prize-move-btn:active {
+  transform: translateY(0);
+}
+/* Responsive tweaks للجوال */
+@media (max-width: 720px) {
+  .play-wheel-stage .stats-container {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  .play-wheel-stage .stat-box {
+    width: 100%;
+    min-width: auto;
+    padding: 18px 20px;
+  }
+  .play-wheel-stage .prize-order-card {
+    margin-inline: 10px;
+    padding: 14px 14px 8px;
+  }
+  .play-wheel-stage .wheel-wrap {
+    padding-inline: 8px;
+    gap: 14px;
+  }
+  .play-wheel-stage .result-area {
+    padding-inline: 4px;
+  }
+}
+@media (max-width: 480px) {
+  .play-wheel-stage .stat-box {
+    min-width: auto;
+    padding: 16px 18px;
+  }
+  .play-wheel-stage .wheel-container {
+    width: min(96vw, 380px);
+  }
+  .play-wheel-stage .result-card {
+    padding: 20px 16px;
+  }
+  .play-wheel-stage .result-winner {
+    padding: 14px;
+  }
+  .play-wheel-stage .spin-again-btn,
+  .play-wheel-stage .welcome-spin-btn {
+    width: 100%;
+    padding-inline: 0;
+  }
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -52,22 +287,90 @@ const spinBtn = document.getElementById("spinBtn");
 const resultText = document.getElementById("resultText");
 const participantsCountEl = document.getElementById("participantsCount");
 const prizesCountEl = document.getElementById("prizesCount");
+const prizeOrderList = document.getElementById("prizeOrderList");
+const enablePrizeOrder = document.getElementById("enablePrizeOrder");
 
 let spinning = false;
 let rotation = 0;
 let animationFrame = null;
 let remainingPrizesCount = prizes.length;
+const originalPrizes = prizes.slice();
+let wheelPrizes = originalPrizes.slice(); // نسخة قابلة للتعديل للعرض على العجلة
+let customOrder = false;
+
+function renderPrizeOrderList() {
+    if (!prizeOrderList) return;
+    prizeOrderList.innerHTML = '';
+    wheelPrizes.forEach((prize, index) => {
+        const li = document.createElement('li');
+        li.className = 'prize-order-item';
+        li.innerHTML = `
+            <div class="prize-order-main">
+                <span class="prize-order-index">${index + 1}</span>
+                <span class="prize-order-text">${prize || ''}</span>
+            </div>
+            <div class="prize-order-actions">
+                <button type="button" class="prize-move-btn up" data-dir="up" aria-label="تحريك لأعلى">↑</button>
+                <button type="button" class="prize-move-btn down" data-dir="down" aria-label="تحريك لأسفل">↓</button>
+            </div>
+        `;
+        prizeOrderList.appendChild(li);
+
+        const upBtn = li.querySelector('.prize-move-btn.up');
+        const downBtn = li.querySelector('.prize-move-btn.down');
+
+        upBtn.addEventListener('click', () => {
+            if (index === 0) return;
+            customOrder = true;
+            const tmp = wheelPrizes[index - 1];
+            wheelPrizes[index - 1] = wheelPrizes[index];
+            wheelPrizes[index] = tmp;
+            renderPrizeOrderList();
+            drawWheel();
+        });
+
+        downBtn.addEventListener('click', () => {
+            if (index === wheelPrizes.length - 1) return;
+            customOrder = true;
+            const tmp = wheelPrizes[index + 1];
+            wheelPrizes[index + 1] = wheelPrizes[index];
+            wheelPrizes[index] = tmp;
+            renderPrizeOrderList();
+            drawWheel();
+        });
+    });
+}
+
+function applyPrizeOrderMode() {
+    if (!enablePrizeOrder) return;
+    if (enablePrizeOrder.checked) {
+        // استخدام الترتيب الحالي في القائمة كما هو
+        prizeOrderList?.classList.remove('disabled');
+    } else {
+        // ترتيب عشوائي من القائمة الأصلية
+        wheelPrizes = originalPrizes.slice();
+        if (wheelPrizes.length > 1) {
+            for (let i = wheelPrizes.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wheelPrizes[i], wheelPrizes[j]] = [wheelPrizes[j], wheelPrizes[i]];
+            }
+        }
+        prizeOrderList?.classList.add('disabled');
+    }
+    renderPrizeOrderList();
+    drawWheel();
+}
 
 /**
- * Draw Wheel
+ * Draw Wheel - clear text, responsive
  */
 function drawWheel() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const numSeg = prizes.length;
+    const numSeg = wheelPrizes.length;
     const arc = (2 * Math.PI) / numSeg;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = canvas.width / 2 - 8;
+    const radius = canvas.width / 2 - 10;
 
     ctx.save();
     ctx.translate(centerX, centerY);
@@ -80,75 +383,67 @@ function drawWheel() {
         ctx.arc(0, 0, radius, i * arc, (i + 1) * arc);
         ctx.lineTo(0, 0);
         ctx.fill();
-        
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = 4;
         ctx.stroke();
 
         ctx.save();
         ctx.rotate(i * arc + arc / 2);
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "right";
-        ctx.shadowColor = "rgba(0,0,0,0.5)";
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 1;
-        
-        const maxWidth = radius - 50;
-        const prizeText = prizes[i];
-        let fontSize = 20;
+        const maxWidth = radius - 55;
+        const prizeText = wheelPrizes[i];
+        let fontSize = Math.min(24, Math.floor(radius / 8));
         ctx.font = `bold ${fontSize}px Cairo`;
-        
         let textWidth = ctx.measureText(prizeText).width;
-        
         if (textWidth > maxWidth) {
-            fontSize = Math.max(12, Math.floor((maxWidth / textWidth) * fontSize));
+            fontSize = Math.max(14, Math.floor((maxWidth / textWidth) * fontSize));
             ctx.font = `bold ${fontSize}px Cairo`;
             textWidth = ctx.measureText(prizeText).width;
         }
-        
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "right";
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
         if (textWidth > maxWidth) {
             const words = prizeText.split(' ');
             const lines = [];
             let currentLine = '';
-            
             for (let word of words) {
                 const testLine = currentLine ? currentLine + ' ' + word : word;
-                const testWidth = ctx.measureText(testLine).width;
-                
-                if (testWidth > maxWidth && currentLine) {
+                if (ctx.measureText(testLine).width > maxWidth && currentLine) {
                     lines.push(currentLine);
                     currentLine = word;
-                } else {
-                    currentLine = testLine;
-                }
+                } else currentLine = testLine;
             }
-            if (currentLine) {
-                lines.push(currentLine);
-            }
-            
-            const lineHeight = fontSize + 4;
-            const totalHeight = lines.length * lineHeight;
-            const startY = -(totalHeight / 2) + (lineHeight / 2);
-            
-            lines.forEach((line, lineIndex) => {
-                ctx.fillText(line, radius - 20, startY + (lineIndex * lineHeight));
+            if (currentLine) lines.push(currentLine);
+            const lh = fontSize + 5;
+            const startY = -(lines.length * lh) / 2 + lh / 2;
+            lines.forEach((line, j) => {
+                ctx.strokeStyle = "rgba(0,0,0,0.9)";
+                ctx.lineWidth = 4;
+                ctx.strokeText(line, radius - 25, startY + j * lh);
+                ctx.fillStyle = "#fff";
+                ctx.fillText(line, radius - 25, startY + j * lh);
             });
         } else {
-            ctx.fillText(prizeText, radius - 20, 10);
+            ctx.strokeStyle = "rgba(0,0,0,0.9)";
+            ctx.lineWidth = 4;
+            ctx.strokeText(prizeText, radius - 25, 12);
+            ctx.fillStyle = "#fff";
+            ctx.fillText(prizeText, radius - 25, 12);
         }
-        
+        ctx.shadowColor = "transparent";
         ctx.restore();
     }
-    
     ctx.restore();
-    
+
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, 35, 0, 2 * Math.PI);
     ctx.fillStyle = "#2F1D52";
     ctx.fill();
     ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
     ctx.stroke();
 }
 
@@ -184,8 +479,8 @@ async function spinWheel() {
         const wonPrize = (result.prize || '').trim();
         const winner = result.winner;
         
-        // Find prize index
-        const normalizedPrizes = prizes.map(p => (p || '').toString().trim());
+        // Find prize index حسب ترتيب العجلة الحالي
+        const normalizedPrizes = wheelPrizes.map(p => (p || '').toString().trim());
         let prizeIndex = normalizedPrizes.indexOf(wonPrize);
         
         if (prizeIndex === -1) {
@@ -197,7 +492,7 @@ async function spinWheel() {
         }
 
         // Calculate target rotation (prize at top, then rotate to show at bottom)
-        const arc = (2 * Math.PI) / prizes.length;
+        const arc = (2 * Math.PI) / wheelPrizes.length;
         const targetPrizeAngle = prizeIndex * arc + arc / 2;
         // Position prize at bottom (270 degrees = 3π/2)
         const targetRotation = (3 * Math.PI / 2) - targetPrizeAngle;
@@ -236,22 +531,25 @@ async function spinWheel() {
                 // Update participants count immediately
                 updateParticipantsCount();
                 
-                // Show result
+                // Show result with clear spin-again button
                 resultText.innerHTML = `
-                    <div style="background: #d4edda; padding: 20px; border-radius: 10px; margin-top: 20px; text-align: center; border: 2px solid #28a745;">
-                        <h2 style="color: #155724; margin: 0 0 15px;">🎉 مبروك! 🎉</h2>
-                        <p style="font-size: 18px; margin: 10px 0; color: #155724;">
-                            <strong>الجائزة:</strong> ${wonPrize}
-                        </p>
-                        <div style="background: #fff; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                            <p style="margin: 5px 0; color: #333;"><strong>الفائز:</strong> ${winner.name}</p>
-                            <p style="margin: 5px 0; color: #333;"><strong>رقم الجوال:</strong> ${winner.phone}</p>
-                            <p style="margin: 5px 0; color: #333;"><strong>حساب التواصل:</strong> ${winner.social_media_account}</p>
-                            <p style="margin: 5px 0; color: #333;"><strong>المدينة:</strong> ${winner.city}</p>
+                    <div class="result-card">
+                        <h2>🎉 مبروك! 🎉</h2>
+                        <p class="result-prize"><strong>الجائزة:</strong> ${wonPrize}</p>
+                        <div class="result-winner">
+                            <p><strong>الفائز:</strong> ${winner.name}</p>
+                            <p><strong>رقم الجوال:</strong> ${winner.phone}</p>
+                            <p><strong>حساب التواصل:</strong> ${winner.social_media_account}</p>
+                            <p><strong>المدينة:</strong> ${winner.city}</p>
                         </div>
+                        <button type="button" class="spin-again-btn" id="spinAgainBtn">دور العجلة مرة أخرى 🎡</button>
                     </div>
                 `;
-                
+                document.getElementById('spinAgainBtn').addEventListener('click', function() {
+                    resultText.innerHTML = '';
+                    spinBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    spinWheel();
+                });
                 resultText.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
@@ -285,12 +583,15 @@ async function updateParticipantsCount() {
 
 // Event listeners
 spinBtn.addEventListener('click', spinWheel);
+window.addEventListener('resize', function() { if (!spinning) drawWheel(); });
+enablePrizeOrder?.addEventListener('change', applyPrizeOrderMode);
 
 // Update participants count every 5 seconds
 setInterval(updateParticipantsCount, 5000);
 
-// Initial draw
-drawWheel();
+// Initial render
+renderPrizeOrderList();
+applyPrizeOrderMode();
 </script>
 {% endblock %}
 

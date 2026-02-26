@@ -10,7 +10,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from datetime import datetime
-from .models import Influencer, Participant
+from .models import Influencer, Participant, InfluencerWinner
 
 
 @admin.register(Influencer)
@@ -223,20 +223,24 @@ class InfluencerAdmin(admin.ModelAdmin):
             ws.cell(row=row_num, column=9, value=len(prizes))
             ws.cell(row=row_num, column=10, value=participants_count)
             
-            if influencer.created_at:
-                ws.cell(row=row_num, column=11, value=influencer.created_at.strftime('%Y-%m-%d %H:%M'))
+            # تواريخ مع حماية من أن تكون قيم نصية أو None
+            created_val = influencer.created_at
+            if created_val and hasattr(created_val, 'strftime'):
+                ws.cell(row=row_num, column=11, value=created_val.strftime('%Y-%m-%d %H:%M'))
             else:
-                ws.cell(row=row_num, column=11, value='-')
+                ws.cell(row=row_num, column=11, value=str(created_val) if created_val else '-')
             
-            if influencer.updated_at:
-                ws.cell(row=row_num, column=12, value=influencer.updated_at.strftime('%Y-%m-%d %H:%M'))
+            updated_val = influencer.updated_at
+            if updated_val and hasattr(updated_val, 'strftime'):
+                ws.cell(row=row_num, column=12, value=updated_val.strftime('%Y-%m-%d %H:%M'))
             else:
-                ws.cell(row=row_num, column=12, value='-')
+                ws.cell(row=row_num, column=12, value=str(updated_val) if updated_val else '-')
             
-            if influencer.approved_at:
-                ws.cell(row=row_num, column=13, value=influencer.approved_at.strftime('%Y-%m-%d %H:%M'))
+            approved_val = influencer.approved_at
+            if approved_val and hasattr(approved_val, 'strftime'):
+                ws.cell(row=row_num, column=13, value=approved_val.strftime('%Y-%m-%d %H:%M'))
             else:
-                ws.cell(row=row_num, column=13, value='-')
+                ws.cell(row=row_num, column=13, value=str(approved_val) if approved_val else '-')
             
             row_num += 1
         
@@ -388,10 +392,13 @@ class ParticipantAdmin(admin.ModelAdmin):
             ws.cell(row=row_num, column=5, value=participant.city)
             ws.cell(row=row_num, column=6, value=participant.influencer.name)
             ws.cell(row=row_num, column=7, value=participant.influencer.get_platform_display())
-            if participant.created_at:
-                ws.cell(row=row_num, column=8, value=participant.created_at.strftime('%Y-%m-%d %H:%M'))
+
+            created_val = participant.created_at
+            if created_val and hasattr(created_val, 'strftime'):
+                ws.cell(row=row_num, column=8, value=created_val.strftime('%Y-%m-%d %H:%M'))
             else:
-                ws.cell(row=row_num, column=8, value='-')
+                ws.cell(row=row_num, column=8, value=str(created_val) if created_val else '-')
+
             row_num += 1
         
         # Auto-adjust column widths
@@ -419,3 +426,138 @@ class ParticipantAdmin(admin.ModelAdmin):
         return response
     
     export_to_excel.short_description = "📊 تصدير البيانات المحددة إلى Excel"
+
+
+@admin.register(InfluencerWinner)
+class InfluencerWinnerAdmin(admin.ModelAdmin):
+    """سحوبات المؤثرين - مشابهة لسحوبات الشركات في خانة الألعاب"""
+
+    list_display = [
+        'influencer',
+        'participant_name',
+        'participant_phone',
+        'participant_city',
+        'participant_social',
+        'prize',
+        'created_at',
+    ]
+    list_filter = ['influencer', 'created_at']
+    search_fields = ['prize', 'influencer__name', 'participant__name', 'participant__phone']
+    readonly_fields = ['created_at']
+    actions = ['export_to_excel']
+
+    fieldsets = (
+        ('معلومات السحب', {
+            'fields': ('influencer', 'participant', 'prize', 'created_at'),
+        }),
+    )
+
+    def participant_name(self, obj):
+        if obj.participant:
+            return obj.participant.name
+        return '-'
+
+    participant_name.short_description = 'اسم الفائز'
+
+    def participant_phone(self, obj):
+        if obj.participant:
+            return obj.participant.phone
+        return '-'
+
+    participant_phone.short_description = 'جوال الفائز'
+
+    def participant_city(self, obj):
+        if obj.participant:
+            return obj.participant.city
+        return '-'
+
+    participant_city.short_description = 'مدينة الفائز'
+
+    def participant_social(self, obj):
+        if obj.participant:
+            return obj.participant.social_media_account
+        return '-'
+
+    participant_social.short_description = 'حساب التواصل'
+
+    def changelist_view(self, request, extra_context=None):
+        """إضافة زر تصدير مثل باقي الخانات"""
+        if 'action' in request.POST and request.POST.get('action') == 'export_to_excel':
+            selected_ids = request.POST.getlist('_selected_action')
+            if selected_ids:
+                queryset = self.get_queryset(request).filter(pk__in=selected_ids)
+            else:
+                queryset = self.get_queryset(request)
+            return self.export_to_excel(request, queryset)
+
+        extra_context = extra_context or {}
+        extra_context['show_export_button'] = True
+        extra_context['export_action_name'] = 'export_to_excel'
+        return super().changelist_view(request, extra_context)
+
+    def export_to_excel(self, request, queryset):
+        """تصدير الفائزين (المؤثرين) إلى Excel"""
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "سحوبات المؤثرين"
+
+        headers = [
+            'ID',
+            'اسم المؤثر',
+            'اسم الفائز',
+            'جوال الفائز',
+             'المدينة',
+             'حساب التواصل',
+            'الجائزة',
+            'تاريخ الفوز',
+        ]
+
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill(start_color="FF6B9D", end_color="FF6B9D", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+
+        row_num = 2
+        for win in queryset.select_related('influencer', 'participant'):
+            ws.cell(row=row_num, column=1, value=win.id)
+            ws.cell(row=row_num, column=2, value=getattr(win.influencer, 'name', '-'))
+            ws.cell(row=row_num, column=3, value=win.participant.name if win.participant else '-')
+            ws.cell(row=row_num, column=4, value=win.participant.phone if win.participant else '-')
+            ws.cell(row=row_num, column=5, value=win.participant.city if win.participant else '-')
+            ws.cell(row=row_num, column=6, value=win.participant.social_media_account if win.participant else '-')
+            ws.cell(row=row_num, column=7, value=win.prize)
+
+            created_val = win.created_at
+            if created_val and hasattr(created_val, 'strftime'):
+                ws.cell(row=row_num, column=8, value=created_val.strftime('%Y-%m-%d %H:%M'))
+            else:
+                ws.cell(row=row_num, column=8, value=str(created_val) if created_val else '-')
+
+            row_num += 1
+
+        for col_num in range(1, len(headers) + 1):
+            column_letter = get_column_letter(col_num)
+            max_length = 0
+            for row in ws[column_letter]:
+                try:
+                    if row.value:
+                        max_length = max(max_length, len(str(row.value)))
+                except Exception:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'سحوبات_المؤثرين_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        wb.save(response)
+        return response
+
+    export_to_excel.short_description = "📊 تصدير الفائزين إلى Excel"

@@ -251,6 +251,9 @@ def register_participant_page(request, token):
     
     influencer = get_object_or_404(Influencer, slug=slug)
     
+    if not influencer.is_active:
+        return render(request, 'influencers/suspended.html')
+    
     # Get encrypted token for the form submission
     from .utils import encrypt_slug
     encrypted_token = encrypt_slug(slug) or token
@@ -277,6 +280,11 @@ def register_participant(request, token):
             }, status=404)
         
         influencer = get_object_or_404(Influencer, slug=slug)
+        if not influencer.is_active:
+            return JsonResponse({
+                'success': False,
+                'message': 'الصفحة معلقة من إدارة دوّرها'
+            }, status=403)
         data = json.loads(request.body)
         
         name = data.get('name', '').strip()
@@ -361,6 +369,9 @@ def play_wheel_page(request, token):
     
     influencer = get_object_or_404(Influencer, slug=slug)
     
+    if not influencer.is_active:
+        return render(request, 'influencers/suspended.html')
+    
     prizes = influencer.get_prizes_list()
     colors = influencer.get_colors_list()
     
@@ -433,7 +444,7 @@ def spin_wheel(request, token):
         if not influencer.is_active:
             return JsonResponse({
                 'success': False,
-                'message': 'المؤثر غير مفعل حالياً'
+                'message': 'الصفحة معلقة من إدارة دوّرها'
             }, status=403)
         
         # Get all participants

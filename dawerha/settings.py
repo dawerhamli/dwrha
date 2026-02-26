@@ -18,11 +18,15 @@ SLUG_SIGNING_SALT = config('SLUG_SIGNING_SALT', default='dawerha-slug-signing-se
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = [h.strip() for h in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',') if h.strip()]
+_allowed = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,172.20.10.2').strip()
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+if DEBUG:
+    ALLOWED_HOSTS = ['*']  # Allow all in development
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o.strip()]
 
 # Application definition
 INSTALLED_APPS = [
+    'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

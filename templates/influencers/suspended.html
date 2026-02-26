@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}الصفحة معلقة | دوّرها{% endblock %}
+
+{% block content %}
+<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+
+<header class="hero">
+    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
+    <h1 class="hero-title fade-in">⏸️ الصفحة معلقة</h1>
+    <p class="fade-in">هذه الصفحة معلقة مؤقتاً من إدارة دوّرها.</p>
+    <p class="fade-in" style="margin-top: 15px; color: #6c757d;">يرجى المحاولة لاحقاً أو التواصل مع المؤثر.</p>
+</header>
+{% endblock %}

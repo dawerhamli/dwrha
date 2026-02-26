@@ -7,7 +7,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # مسار لوحة الإدارة معرّف بشكل غير سهل التخمين
+    path('super-admin-8790-panel/', admin.site.urls),
     path('', include('companies.urls')),
     path('game/', include('game.urls')),
     path('influencers/', include('influencers.urls')),
