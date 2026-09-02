@@ -15,9 +15,13 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from companies.models import Company
+from pathlib import Path
+
+from django.templatetags.static import static
+
+from .leap_assets import LEAP_PRIZE_LOGOS
 from companies.utils import decrypt_slug
-from .models import GameSpin
+from .models import GameSpin, LeapWheel, LeapWheelPrize, LeapWheelSpin
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -296,3 +300,157 @@ def game_dashboard(request, token):
     }
     
     return render(request, 'game/dashboard.html', context)
+
+
+def _get_client_ip(request):
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded:
+        return x_forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def _leap_static_url(request, rel_path):
+    if not rel_path:
+        return ''
+    full = Path(settings.BASE_DIR) / 'static' / rel_path
+    if not full.is_file():
+        return ''
+    return request.build_absolute_uri(static(rel_path))
+
+
+def _prize_logo_url(prize, request):
+    if prize.logo:
+        return request.build_absolute_uri(prize.logo.url)
+    return _leap_static_url(request, LEAP_PRIZE_LOGOS.get(prize.name))
+
+
+def _serialize_leap_segments(wheel, request):
+    """كل شرائح العجلة مع حالة المخزون."""
+    wheel.ensure_default_prizes()
+    segments = []
+    for prize in wheel.get_wheel_segments():
+        segments.append({
+            'name': prize.name,
+            'logo': _prize_logo_url(prize, request),
+            'available': prize.is_active and prize.remaining_quantity > 0,
+            'remaining': prize.remaining_quantity,
+            'order': prize.order,
+        })
+    return segments
+
+
+def leap_wheel_play(request):
+    """صفحة عجلة LEAP العامة."""
+    wheel = LeapWheel.get_instance()
+    wheel.ensure_default_prizes()
+    segments = _serialize_leap_segments(wheel, request)
+
+    context = {
+        'wheel': wheel,
+        'is_enabled': wheel.is_enabled,
+        'has_stock': wheel.has_stock(),
+        'segments_json': json.dumps(segments, ensure_ascii=False),
+        'title': wheel.title,
+    }
+    return render(request, 'game/leap_wheel.html', context)
+
+
+@require_http_methods(["GET"])
+def leap_wheel_prizes(request):
+    """شرائح العجلة مع المخزون."""
+    wheel = LeapWheel.get_instance()
+    if not wheel.is_enabled:
+        return JsonResponse({'success': False, 'message': 'العجلة غير مفعّلة'}, status=403)
+
+    segments = _serialize_leap_segments(wheel, request)
+    has_stock = any(s['available'] for s in segments)
+    return JsonResponse({
+        'success': True,
+        'segments': segments,
+        'has_stock': has_stock,
+    })
+
+
+def _select_leap_prize(wheel):
+    """اختيار جائزة عشوائية من المتبقي — كل دور يُنقص المخزون تدريجياً."""
+    from django.db import transaction
+
+    with transaction.atomic():
+        available = list(
+            LeapWheelPrize.objects.select_for_update().filter(
+                leap_wheel=wheel,
+                is_active=True,
+                remaining_quantity__gt=0,
+            ).order_by('order', 'id')
+        )
+        if not available:
+            return None
+
+        selected = random.choice(available)
+        selected.remaining_quantity -= 1
+        selected.save(update_fields=['remaining_quantity'])
+        return selected
+
+
+@require_http_methods(["POST"])
+def leap_wheel_spin(request):
+    """تدوير عجلة LEAP."""
+    wheel = LeapWheel.get_instance()
+
+    if not wheel.is_enabled:
+        return JsonResponse({'success': False, 'message': 'العجلة غير مفعّلة حالياً'}, status=403)
+
+    if not wheel.has_stock():
+        return JsonResponse({
+            'success': False,
+            'message': 'انتهت الجوائز، حظ أوفر',
+            'stock_ended': True,
+        }, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'بيانات غير صالحة'}, status=400)
+
+    visitor_name = (data.get('visitor_name') or '').strip()
+    visitor_phone = (data.get('visitor_phone') or '').strip()
+
+    if not visitor_name:
+        return JsonResponse({'success': False, 'message': 'الاسم مطلوب'}, status=400)
+
+    phone_pattern = r'^05[0-9]{8}$'
+    if not visitor_phone:
+        return JsonResponse({'success': False, 'message': 'رقم الجوال مطلوب'}, status=400)
+    if not re.match(phone_pattern, visitor_phone):
+        return JsonResponse({
+            'success': False,
+            'message': 'رقم الجوال غير صحيح. يجب أن يبدأ بـ 05 ويحتوي على 10 أرقام'
+        }, status=400)
+
+    prize_obj = _select_leap_prize(wheel)
+    if not prize_obj:
+        return JsonResponse({
+            'success': False,
+            'message': 'انتهت الجوائز، حظ أوفر',
+            'stock_ended': True,
+        }, status=400)
+
+    LeapWheelSpin.objects.create(
+        leap_wheel=wheel,
+        prize=prize_obj,
+        visitor_name=visitor_name,
+        visitor_phone=visitor_phone,
+        prize_name=prize_obj.name,
+        ip_address=_get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+    )
+
+    remaining_segments = _serialize_leap_segments(wheel, request)
+    has_stock = any(s['available'] for s in remaining_segments)
+
+    return JsonResponse({
+        'success': True,
+        'prize': prize_obj.name,
+        'segments': remaining_segments,
+        'has_stock': has_stock,
+    })

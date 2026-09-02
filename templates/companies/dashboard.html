@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}لوحة التحكم - {{ company.name }} | دوّرها{% endblock %}
+{% block body_class %}dash-page{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+    <aside class="sidebar">
+        <nav class="side-nav">
+            <a class="active" href="#"><i class="fas fa-home"></i> الرئيسية</a>
+            <a href="#"><i class="fas fa-bullhorn"></i> الحملات</a>
+            <a href="#"><i class="fas fa-users"></i> المشاركون</a>
+            <a href="#"><i class="fas fa-gift"></i> الجوائز</a>
+            <a href="#"><i class="fas fa-chart-bar"></i> التقارير</a>
+            <a href="#"><i class="fas fa-cog"></i> الإعدادات</a>
+        </nav>
+        <a href="{% url 'companies:home' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</a>
+    </aside>
+    <main class="dash-main">
+        <header class="dash-header">
+            <div class="dash-logo">
+                <span class="dash-logo-mark"><i class="fas fa-compass"></i></span>
+                <span class="dash-logo-text">
+                    <strong>دورها</strong>
+                    <span>DAWERHA</span>
+                </span>
+            </div>
+            <div class="dash-heading">
+                <h1>لوحة التحكم</h1>
+                <p class="sub">نظرة عامة على حملتك — {{ company.name }}</p>
+            </div>
+        </header>
+
+        <div class="kpi-row">
+            <div class="kpi">
+                <div class="k">إجمالي دورات العجلة</div>
+                <div class="v">{{ total_spins }}</div>
+                <div class="kpi-foot">
+                    {% if week_spins %}
+                        <span class="positive">+{{ week_spins }} هذا الأسبوع</span>
+                    {% else %}
+                        <span class="muted">لا توجد دورات بعد</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="kpi">
+                <div class="k">دورات اليوم</div>
+                <div class="v">{{ today_spins }}</div>
+                <div class="kpi-foot"><span class="muted">تحديث مباشر</span></div>
+            </div>
+            <div class="kpi">
+                <div class="k">إجمالي المشاركين</div>
+                <div class="v">{{ unique_visitors }}</div>
+                <div class="kpi-foot">
+                    {% if unique_visitors %}
+                        <span class="positive">مشاركون فريدون</span>
+                    {% else %}
+                        <span class="muted">لا يوجد مشاركون بعد</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>توزيع الجوائز</h3>
+                <div class="chart-box chart-box--donut"><canvas id="prizeChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>معدل المشاركة</h3>
+                <div class="chart-box chart-box--wheel">
+                    <div class="dash-wheel-visual wheel-visual">
+                        <div class="wheel-3d">
+                            <div class="wheel-hub"><i class="fas fa-compass"></i></div>
+                        </div>
+                        <div class="wheel-gifts">
+                            <div class="gift g-purple"></div>
+                            <div class="gift g-teal"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>المشاركون عبر الأيام</h3>
+            <div class="chart-box chart-box--line"><canvas id="trendChart"></canvas></div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const labels = [{% for k,v in prize_distribution.items %}'{{ k|default:"جائزة"|escapejs }}'{% if not forloop.last %},{% endif %}{% empty %}'لا توجد بيانات'{% endfor %}];
+const values = [{% for k,v in prize_distribution.items %}{{ v }}{% if not forloop.last %},{% endif %}{% empty %}1{% endfor %}];
+const colors = ['#5B2DB3', '#14B8A6', '#8B5CF6', '#2DD4BF', '#F59E0B', '#60A5FA'];
+
+new Chart(document.getElementById('prizeChart'), {
+    type: 'doughnut',
+    data: {
+        labels,
+        datasets: [{
+            data: values,
+            backgroundColor: colors,
+            borderWidth: 0,
+            hoverOffset: 6
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                position: 'right',
+                align: 'center',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 18,
+                    font: { family: 'Cairo', size: 13, weight: '700' },
+                    color: '#4B5563'
+                }
+            }
+        },
+        maintainAspectRatio: false,
+        cutout: '62%'
+    }
+});
+
+new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+        labels: ['يوم 1', 'يوم 2', 'يوم 3', 'يوم 4', 'يوم 5', 'يوم 6', 'يوم 7'],
+        datasets: [{
+            label: 'المشاركون',
+            data: [{{ today_spins }}, {{ week_spins }}, {{ total_spins }}, {{ today_spins }}, {{ unique_visitors }}, {{ week_spins }}, {{ total_spins }}],
+            borderColor: '#6D28D9',
+            backgroundColor: 'rgba(109, 40, 217, 0.12)',
+            fill: true,
+            tension: 0.42,
+            borderWidth: 3,
+            pointBackgroundColor: '#6D28D9',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { color: '#9CA3AF', font: { family: 'Cairo', weight: '600' } }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(156, 163, 175, 0.18)' },
+                ticks: { color: '#9CA3AF', font: { family: 'Cairo', weight: '600' } }
+            }
+        },
+        maintainAspectRatio: false
+    }
+});
+</script>
+{% endblock %}

@@ -2,31 +2,139 @@
 {% load static %}
 
 {% block title %}دوّرها | منصة الجوائز التفاعلية{% endblock %}
+{% block body_class %}theme-dark{% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+<section class="landing-dark" id="landing">
+    <div class="landing-inner">
+        <header class="home-header">
+            <div class="home-logo">
+                <div class="home-logo-mark" aria-hidden="true"><i class="fas fa-compass"></i></div>
+                <div class="home-logo-text">
+                    <strong>دورها</strong>
+                    <span>DAWERHA</span>
+                </div>
+            </div>
+            <div class="home-event">
+                <strong>LEAP 2026</strong>
+                <span>Hall 3 | Booth H3.F160</span>
+            </div>
+        </header>
 
-<header class="hero">
-    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
-    <h1 class="hero-title fade-in">🎡 دوّرها | منصتك لابتكار تجارب فريدة</h1>
-    <p class="fade-in">سجّل معنا واحصل على صفحة خاصة مع عجلة تفاعلية وجوائزك الخاصة ✨</p>
-</header>
+        <div class="home-title">
+            <h1>بيانات مشروع دورها</h1>
+            <p>نظرة عامة واضحة عن المشروع</p>
+        </div>
 
-<!-- Tabs for switching between Company and Influencer forms -->
-<div class="form-tabs fade-in" style="max-width: 800px; margin: 40px auto; display: flex; gap: 10px; justify-content: center; border-bottom: 2px solid #e9ecef;">
-    <button class="tab-btn active" data-tab="company" style="flex: 1; padding: 15px; background: #6A3FA0; color: white; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s;">
-        🏢 تسجيل الشركات
-    </button>
-    <button class="tab-btn" data-tab="influencer" style="flex: 1; padding: 15px; background: #e9ecef; color: #6A3FA0; border: none; border-radius: 10px 10px 0 0; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s;">
-        ⭐ تسجيل المؤثرين
-    </button>
-</div>
+        <div class="home-grid">
+            <div class="home-left">
+                <article class="about-box">
+                    <h2>عن المشروع</h2>
+                    <p>دورها منصة تفاعلية ذكية تساعد الشركات على تعزيز تجربة العملاء، وجمع بيانات دقيقة، وتحويل التفاعل إلى ولاء ونمو.</p>
+                </article>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">عدد المشاركين</div>
+                        <div class="value">1,248</div>
+                        <div class="trend">+12% عن الشهر السابق</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">عدد الجوائز الموزعة</div>
+                        <div class="value">56</div>
+                        <div class="trend">+8% عن الشهر السابق</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">الشركات المستفيدة</div>
+                        <div class="value">23</div>
+                        <div class="trend">+15% عن الشهر السابق</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">معدل المشاركة</div>
+                        <div class="value">68%</div>
+                        <div class="trend">+10% عن الشهر السابق</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wheel-visual">
+                <div class="wheel-3d">
+                    <div class="wheel-hub"><i class="fas fa-compass"></i></div>
+                </div>
+                <div class="wheel-gifts">
+                    <div class="gift g-purple"></div>
+                    <div class="gift g-teal"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-bar">
+            <div class="feature-item"><span><i class="fas fa-lightbulb"></i></span>تجربة تفاعلية تجذب العميل</div>
+            <div class="feature-item"><span><i class="fas fa-network-wired"></i></span>جمع بيانات ذكية وموثوقة</div>
+            <div class="feature-item"><span><i class="fas fa-chart-line"></i></span>تحليلات وتقارير فورية</div>
+            <div class="feature-item"><span><i class="fas fa-key"></i></span>زيادة الولاء والمبيعات</div>
+        </div>
+
+        <p class="home-slogan">نعزز التجربة، نجمع البيانات، نصنع الأثر</p>
+        <div class="landing-cta">
+            <button type="button" class="btn primary" id="startJourneyBtn">ابدأ رحلتك مع دوّرها</button>
+        </div>
+    </div>
+</section>
+
+<section class="account-section" id="accountSection" style="display:none;">
+    <div class="account-inner">
+        <header class="account-top">
+            <button type="button" class="account-logo" id="backToHome" title="الرجوع للصفحة الرئيسية">
+                <span class="home-logo-mark"><i class="fas fa-compass"></i></span>
+                <span class="home-logo-text">
+                    <strong>دورها</strong>
+                    <span>DAWERHA</span>
+                </span>
+            </button>
+        </header>
+
+        <h1>اختر نوع حسابك</h1>
+        <p class="sub">ابدأ رحلتك مع دورها</p>
+
+        <div class="account-cards">
+            <div class="account-card card-company">
+                <div class="account-icon company"><i class="fas fa-city"></i></div>
+                <h3>للشركات</h3>
+                <ul>
+                    <li>إدارة السحوبات والجوائز وجمع بيانات عملائك</li>
+                    <li>لوحة تحكم متكاملة</li>
+                    <li>تقارير وتحليلات ذكية</li>
+                    <li>تخصيص وتجربة احترافية</li>
+                </ul>
+                <button type="button" class="btn primary tab-btn" data-tab="company" id="showCompanyForm">إنشاء حساب شركة</button>
+            </div>
+            <div class="account-card card-influencer">
+                <div class="account-icon influencer"><i class="far fa-user"></i></div>
+                <h3>للمؤثرين</h3>
+                <ul>
+                    <li>تفاعل مع جمهورك من خلال سحوبات رائعة</li>
+                    <li>زيادة التفاعل والمشاركات</li>
+                    <li>دعم متعدد ولغات</li>
+                    <li>تقارير عن جمهورك</li>
+                </ul>
+                <button type="button" class="btn teal tab-btn" data-tab="influencer" id="showInfluencerForm">إنشاء حساب مؤثر</button>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- Company Registration Form -->
-<section class="form-section fade-in" id="companyForm" style="display: block;">
+<section class="form-section fade-in wizard-wrap" id="companyForm" style="display: none;">
+    <div class="stepper">
+        <div class="step"><div class="dot">1</div>جاهز للنشر</div>
+        <div class="step active"><div class="dot">2</div>إضافة الجوائز</div>
+        <div class="step"><div class="dot">3</div>تصميم العجلة</div>
+    </div>
     <h2>سجّل شركتك</h2>
-    <p class="form-note">⭐ هذه الصفحة مخصصة للشركات فقط</p>
+    <p class="form-note">هذه الصفحة مخصصة للشركات فقط</p>
     
     <form id="companyLeadForm" class="form">
         {% csrf_token %}
@@ -64,7 +172,7 @@
             <label class="full">
                 الجوائز واحتمالات الفوز (النسبة المئوية)
                 <small style="display: block; color: #6c757d; margin-bottom: 10px; font-size: 13px;">
-                    💡 كلما زادت النسبة زاد احتمال الفوز بالجائزة (من 1% إلى 100%)
+                    كلما زادت النسبة زاد احتمال الفوز بالجائزة (من 1% إلى 100%)
                 </small>
                 <div id="companyPrizesContainer" style="margin-top: 10px;">
                     <div class="prize-item" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
@@ -72,27 +180,35 @@
                             <input type="text" class="prize-name" placeholder="اسم الجائزة (مثال: خصم 10%)" required style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <input type="number" class="prize-percentage" min="1" max="100" value="50" required style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-align: center; font-size: 14px;">
-                                <span style="font-weight: bold; color: #6A3FA0;">%</span>
+                                <span style="font-weight: bold; color: #5B2DB3;">%</span>
                             </div>
                             <button type="button" class="remove-prize-btn" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">حذف</button>
                         </div>
                     </div>
                 </div>
-                <button type="button" id="companyAddPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #6A3FA0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة</button>
+                <button type="button" id="companyAddPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #5B2DB3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة جديدة</button>
                 <div id="companyTotalPercentage" style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-weight: bold; color: #1565c0; text-align: center;">
                     المجموع: <span id="companyTotalPercentValue">50</span>% (سيتم تطبيع النسب تلقائياً)
                 </div>
             </label>
         </div>
 
-        <button type="submit" class="btn primary">إرسال</button>
+        <div class="wizard-nav">
+            <button type="button" class="btn outline" id="backToAccounts">السابق</button>
+            <button type="submit" class="btn primary">التالي / إرسال</button>
+        </div>
     </form>
 </section>
 
 <!-- Influencer Registration Form -->
-<section class="form-section fade-in" id="influencerForm" style="display: none;">
+<section class="form-section fade-in wizard-wrap" id="influencerForm" style="display: none;">
+    <div class="stepper">
+        <div class="step"><div class="dot">1</div>جاهز للنشر</div>
+        <div class="step active"><div class="dot">2</div>إضافة الجوائز</div>
+        <div class="step"><div class="dot">3</div>تصميم العجلة</div>
+    </div>
     <h2>سجّل حسابك</h2>
-    <p class="form-note">⭐ هذه الصفحة مخصصة للمؤثرين فقط</p>
+    <p class="form-note">هذه الصفحة مخصصة للمؤثرين فقط</p>
     
     <form id="influencerLeadForm" class="form">
         {% csrf_token %}
@@ -125,7 +241,7 @@
             <label class="full">
                 الجوائز
                 <small style="display: block; color: #6c757d; margin-bottom: 10px; font-size: 13px;">
-                    💡 سيتم اختيار الجائزة والفائز بشكل عشوائي من المسجلين
+                    سيتم اختيار الجائزة والفائز بشكل عشوائي من المسجلين
                 </small>
                 <div id="influencerPrizesContainer" style="margin-top: 10px;">
                     <div class="prize-item" style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
@@ -135,11 +251,14 @@
                         </div>
                     </div>
                 </div>
-                <button type="button" id="influencerAddPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #6A3FA0; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة</button>
+                <button type="button" id="influencerAddPrizeBtn" style="margin-top: 10px; padding: 8px 15px; background: #5B2DB3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">+ إضافة جائزة جديدة</button>
             </label>
         </div>
 
-        <button type="submit" class="btn primary">إرسال</button>
+        <div class="wizard-nav">
+            <button type="button" class="btn outline back-accounts">السابق</button>
+            <button type="submit" class="btn primary">التالي / إرسال</button>
+        </div>
     </form>
 </section>
 {% endblock %}
@@ -147,26 +266,45 @@
 {% block extra_js %}
 <script>
 /**
- * Tab switching functionality
+ * Landing + account type switching
  */
+document.getElementById('startJourneyBtn')?.addEventListener('click', () => {
+    document.getElementById('landing').style.display = 'none';
+    document.getElementById('accountSection').style.display = 'flex';
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('account-page');
+    window.scrollTo(0, 0);
+});
+
+function showHome() {
+    document.getElementById('companyForm').style.display = 'none';
+    document.getElementById('influencerForm').style.display = 'none';
+    document.getElementById('accountSection').style.display = 'none';
+    document.getElementById('landing').style.display = 'block';
+    document.body.classList.add('theme-dark');
+    document.body.classList.remove('account-page');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showAccounts() {
+    document.getElementById('companyForm').style.display = 'none';
+    document.getElementById('influencerForm').style.display = 'none';
+    document.getElementById('accountSection').style.display = 'flex';
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('account-page');
+    window.scrollTo(0, 0);
+}
+
+document.getElementById('backToHome')?.addEventListener('click', showHome);
+document.getElementById('backToAccounts')?.addEventListener('click', showAccounts);
+document.querySelectorAll('.back-accounts').forEach(btn => btn.addEventListener('click', showAccounts));
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const targetTab = this.dataset.tab;
-        
-        // Update button styles
-        document.querySelectorAll('.tab-btn').forEach(b => {
-            if (b.dataset.tab === targetTab) {
-                b.style.background = '#6A3FA0';
-                b.style.color = 'white';
-                b.classList.add('active');
-            } else {
-                b.style.background = '#e9ecef';
-                b.style.color = '#6A3FA0';
-                b.classList.remove('active');
-            }
-        });
-        
-        // Show/hide forms
+        document.getElementById('landing').style.display = 'none';
+        document.getElementById('accountSection').style.display = 'none';
+        document.body.classList.remove('theme-dark', 'account-page');
         if (targetTab === 'company') {
             document.getElementById('companyForm').style.display = 'block';
             document.getElementById('influencerForm').style.display = 'none';
@@ -174,6 +312,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
             document.getElementById('companyForm').style.display = 'none';
             document.getElementById('influencerForm').style.display = 'block';
         }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 });
 

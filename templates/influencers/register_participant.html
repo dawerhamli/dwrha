@@ -4,18 +4,13 @@
 {% block title %}التسجيل - {{ influencer.name }} | دوّرها{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
-
-<header class="hero">
-    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
-    <h1 class="hero-title fade-in">🎉 التسجيل في السحب</h1>
-    <p class="fade-in">سجّل بياناتك لدخول السحب وربح جوائز رائعة من {{ influencer.name }} ✨</p>
-</header>
-
-<!-- Registration Form -->
-<section class="form-section fade-in" id="form">
+<div class="wheel-page">
+<div class="leap-topbar">
+    <div class="leap-brand"><i class="fas fa-compass"></i> DAWERHA</div>
+</div>
+<section class="form-section fade-in wizard-wrap" id="form">
     <h2>سجّل بياناتك</h2>
+    <p class="form-note">التسجيل في سحب {{ influencer.name }}</p>
     
     <form id="participantForm" class="form">
         {% csrf_token %}
@@ -43,9 +38,10 @@
             </label>
         </div>
 
-        <button type="submit" class="btn primary">سجّل الآن 🎁</button>
+        <button type="submit" class="btn primary">سجّل الآن</button>
     </form>
 </section>
+</div>
 {% endblock %}
 
 {% block extra_js %}

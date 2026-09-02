@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | دوّرها{% endblock %}
+{% block body_class %}leap-shared-wheel-page leap-view-form{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/leap-wheel-shared.css' %}?v=20260830f">
+{% endblock %}
+
+{% block content %}
+<div class="leap-shared-page">
+<main class="stage">
+    <header class="leap-shared-header">
+        <h1>{{ title }}</h1>
+        <div class="leap-shared-subtitle">
+            <span class="leap-diamond">◆</span>
+            <span>الشركاء</span>
+            <span class="leap-diamond">◆</span>
+        </div>
+    </header>
+
+    <div class="leap-main-area">
+    {% if not is_enabled %}
+    <section class="leap-shared-status fade-in">
+        <div class="leap-status-icon">⏸️</div>
+        <h2>العجلة غير متاحة</h2>
+        <p>عجلة LEAP متوقفة حالياً.</p>
+    </section>
+    {% elif not has_stock %}
+    <section class="leap-shared-status fade-in">
+        <div class="leap-status-icon">🎁</div>
+        <h2>انتهت الجوائز</h2>
+        <p>حظ أوفر في المرة القادمة!</p>
+    </section>
+    {% else %}
+    <section id="stockEndedSection" class="leap-shared-status fade-in" hidden>
+        <div class="leap-status-icon">🎁</div>
+        <h2>انتهت الجوائز</h2>
+        <p>حظ أوفر في المرة القادمة!</p>
+    </section>
+    <section id="nameSection" class="leap-shared-form-card fade-in">
+        <h2>سجّل للمشاركة</h2>
+        <p>أدخل اسمك ورقم جوالك</p>
+        <form id="nameForm">
+            <label>
+                الاسم
+                <input id="visitorName" type="text" required placeholder="اكتب اسمك">
+            </label>
+            <label>
+                رقم الجوال
+                <input id="visitorPhone" type="tel" required placeholder="05xxxxxxxx" pattern="05[0-9]{8}">
+                <small class="field-hint">مثال: 0501234567</small>
+            </label>
+            <button type="submit" class="btn-start">ابدأ الدوران</button>
+        </form>
+    </section>
+
+    <div id="wheelSection" class="leap-shared-wheel-wrap" hidden>
+        <div class="leap-shared-wheel-outer">
+            <div class="leap-shared-lights-ring" aria-hidden="true"></div>
+            <div class="leap-shared-pointer" aria-hidden="true">
+                <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 26C14 26 4 14 4 8a10 10 0 1 1 20 0c0 6-10 18-10 18z" fill="#9333ea" stroke="#c084fc" stroke-width="1"/>
+                </svg>
+            </div>
+            <canvas id="wheelCanvas" width="600" height="600"></canvas>
+        </div>
+        <div class="leap-wheel-actions">
+            <button id="spinBtn" class="leap-shared-spin-btn">دور العجلة</button>
+            <button type="button" class="leap-shared-back-btn" id="backFromWheel">رجوع</button>
+        </div>
+    </div>
+    {% endif %}
+    </div>
+</main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if is_enabled and has_stock %}
+<script>
+const SEGMENT_STYLES = [
+    { bg: '#FFFFFF', text: '#C4A052', font: 'italic bold 20px Georgia, serif' },
+    { bg: '#3B1578', text: '#FFFFFF', font: 'bold 15px Cairo' },
+    { bg: '#FFFFFF', text: '#E85D04', font: 'bold 16px Cairo' },
+    { bg: '#3B1578', text: '#84CC16', font: 'italic bold 18px Georgia, serif' },
+    { bg: '#FFFFFF', text: '#1a1a1a', font: 'bold 14px Georgia, serif' },
+    { bg: '#3B1578', text: '#FFFFFF', font: 'bold 15px Cairo' },
+    { bg: '#FFFFFF', text: '#1B4332', font: 'bold 13px Georgia, serif' },
+];
+
+let segments = {{ segments_json|safe }};
+let currentVisitorName = '';
+let currentVisitorPhone = '';
+let spinning = false;
+let loadedLogos = {};
+
+const nameSection = document.getElementById('nameSection');
+const wheelSection = document.getElementById('wheelSection');
+const stockEndedSection = document.getElementById('stockEndedSection');
+const nameForm = document.getElementById('nameForm');
+const visitorNameInput = document.getElementById('visitorName');
+const visitorPhoneInput = document.getElementById('visitorPhone');
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const wheelOuter = document.querySelector('.leap-shared-wheel-outer');
+const mainArea = document.querySelector('.leap-main-area');
+const wheelActions = document.querySelector('.leap-wheel-actions');
+const WHEEL_SIZE = 600;
+const WHEEL_SCALE = 1.3;
+let canvasDpr = 1;
+
+function fitWheelToViewport() {
+    if (!wheelOuter || !mainArea || wheelSection?.hidden) return;
+    const gap = 8;
+    const actionsH = wheelActions ? wheelActions.offsetHeight + gap : 0;
+    const availW = mainArea.clientWidth || window.innerWidth * 0.96;
+    const availH = Math.max((mainArea.clientHeight || window.innerHeight * 0.5) - actionsH, 0);
+    let maxCap = Math.round(480 * WHEEL_SCALE);
+    if (window.innerWidth >= 1024 && window.innerHeight >= 700) maxCap = Math.round(540 * WHEEL_SCALE);
+    else if (window.innerWidth >= 768) maxCap = Math.round(520 * WHEEL_SCALE);
+    else if (window.innerHeight >= 780) maxCap = Math.round(460 * WHEEL_SCALE);
+    const size = Math.floor(Math.min(availW * 0.99, availH * 0.97, maxCap, window.innerWidth * 0.98));
+    wheelOuter.style.setProperty('--wheel-display-size', `${Math.max(size, Math.round(220 * WHEEL_SCALE))}px`);
+    setupCanvas();
+    drawWheel();
+}
+
+function playableSegments(list) {
+    return (list || segments).filter(s => s.available);
+}
+
+function hasAvailableSegments(list) {
+    return playableSegments(list).length > 0;
+}
+
+function showStockEndedScreen() {
+    if (wheelSection) wheelSection.hidden = true;
+    if (nameSection) nameSection.hidden = true;
+    if (stockEndedSection) stockEndedSection.hidden = false;
+    setLeapView('form');
+    spinning = false;
+    if (spinBtn) {
+        spinBtn.disabled = true;
+        spinBtn.textContent = 'دور العجلة';
+    }
+}
+
+function applySegmentsUpdate(data) {
+    if (data?.segments) {
+        segments = data.segments;
+        preloadLogos(segments, drawWheel);
+    }
+}
+
+function setLeapView(view) {
+    document.body.classList.toggle('leap-view-wheel', view === 'wheel');
+    document.body.classList.toggle('leap-view-form', view === 'form');
+}
+
+function showFormView() {
+    if (wheelSection) wheelSection.hidden = true;
+    if (nameSection) nameSection.hidden = false;
+    if (wheelOuter) wheelOuter.style.removeProperty('--wheel-display-size');
+    setLeapView('form');
+}
+
+function showWheelView() {
+    if (nameSection) nameSection.hidden = true;
+    if (wheelSection) wheelSection.hidden = false;
+    setLeapView('wheel');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => fitWheelToViewport());
+    });
+}
+
+function setupCanvas() {
+    canvasDpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = WHEEL_SIZE * canvasDpr;
+    canvas.height = WHEEL_SIZE * canvasDpr;
+    ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+}
+
+function fitLogoBox(logo, maxW, maxH) {
+    const aspect = logo.naturalWidth / logo.naturalHeight;
+    let dw, dh;
+    if (maxW / maxH > aspect) {
+        dh = maxH;
+        dw = dh * aspect;
+    } else {
+        dw = maxW;
+        dh = dw / aspect;
+    }
+    return { dw, dh };
+}
+
+function drawSegmentLogo(logo, radius, arc, style) {
+    const midR = radius * 0.64;
+    const innerR = radius * 0.22;
+    const radialDepth = midR - innerR;
+    const maxW = midR * arc * 0.92;
+    const maxH = radialDepth * 0.92;
+    const { dw, dh } = fitLogoBox(logo, maxW, maxH);
+    const lx = midR - dw / 2;
+    const ly = -dh / 2;
+    const pad = style.bg !== '#FFFFFF' ? 7 : 4;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, radius - 2, -arc / 2, arc / 2);
+    ctx.closePath();
+    ctx.clip();
+
+    ctx.fillStyle = style.bg === '#FFFFFF' ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.96)';
+    ctx.beginPath();
+    ctx.roundRect(lx - pad, ly - pad, dw + pad * 2, dh + pad * 2, 10);
+    ctx.fill();
+
+    ctx.drawImage(logo, lx, ly, dw, dh);
+    ctx.restore();
+}
+
+function drawWheelContent(sourceList) {
+    const all = sourceList || segments;
+    const cx = WHEEL_SIZE / 2;
+    const cy = WHEEL_SIZE / 2;
+    const outerR = WHEEL_SIZE / 2 - 8;
+    const radius = outerR - 24;
+    const n = Math.max(all.length, 1);
+    const arc = (2 * Math.PI) / n;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+    ctx.fillStyle = '#120820';
+    ctx.fill();
+
+    for (let i = 0; i < n; i++) {
+        const seg = all[i];
+        const styleIdx = seg?.order != null ? seg.order : i;
+        const style = SEGMENT_STYLES[styleIdx % SEGMENT_STYLES.length];
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.fillStyle = style.bg;
+        ctx.arc(cx, cy, radius, i * arc, (i + 1) * arc);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(168,85,247,0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(i * arc + arc / 2);
+
+        const logo = seg && loadedLogos[seg.name];
+        if (logo && logo.complete && logo.naturalWidth) {
+            drawSegmentLogo(logo, radius, arc, style);
+        } else if (seg) {
+            ctx.font = style.font;
+            ctx.fillStyle = style.text;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const label = seg.name.length > 12 ? seg.name.slice(0, 10) + '…' : seg.name;
+            ctx.fillText(label, radius * 0.62, 0);
+        }
+        ctx.restore();
+    }
+
+    const hubR = 38;
+    ctx.beginPath();
+    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+    ctx.fillStyle = '#2d1065';
+    ctx.fill();
+    ctx.strokeStyle = '#a855f7';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.shadowColor = '#a855f7';
+    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 0;
+}
+
+function drawWheel() {
+    ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+    ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+    drawWheelContent();
+}
+
+function preloadLogos(items, callback) {
+    let pending = 0;
+    items.forEach((item) => {
+        if (!item.logo) return;
+        pending++;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = img.onerror = () => { pending--; if (pending <= 0) callback(); };
+        img.src = item.logo;
+        loadedLogos[item.name] = img;
+    });
+    if (pending === 0) callback();
+}
+
+setupCanvas();
+window.addEventListener('resize', () => {
+    if (!wheelSection?.hidden) fitWheelToViewport();
+    else setupCanvas();
+});
+if (mainArea && 'ResizeObserver' in window) {
+    new ResizeObserver(() => {
+        if (!wheelSection?.hidden) fitWheelToViewport();
+    }).observe(mainArea);
+}
+setLeapView('form');
+
+async function refreshSegments() {
+    const res = await fetch('{% url "game:leap_wheel_prizes" %}');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    segments = data.segments;
+    preloadLogos(segments, drawWheel);
+    return data;
+}
+
+nameForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    currentVisitorName = visitorNameInput.value.trim();
+    currentVisitorPhone = visitorPhoneInput.value.trim();
+    if (!/^05[0-9]{8}$/.test(currentVisitorPhone)) {
+        return alert('يرجى إدخال رقم جوال صحيح');
+    }
+    try {
+        const data = await refreshSegments();
+        if (!data.has_stock) return showStockEndedScreen();
+    } catch {
+        return alert('تعذر تحميل العجلة');
+    }
+    showWheelView();
+});
+
+document.getElementById('backFromWheel')?.addEventListener('click', () => {
+    showFormView();
+});
+
+preloadLogos(segments, drawWheel);
+
+function easeOutElastic(t) {
+    const c4 = (2 * Math.PI) / 3;
+    if (t === 0) return 0;
+    if (t === 1) return 1;
+    return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+}
+
+function showPrizeModal(prize, stockEndedAfter) {
+    const modal = document.createElement('div');
+    modal.className = 'leap-prize-modal-overlay';
+    modal.innerHTML = `
+        <div class="leap-prize-modal">
+            <h2>مبروك! 🎉</h2>
+            <p class="winner-name">${currentVisitorName}</p>
+            <p style="color:rgba(255,255,255,0.6);margin:0;">فزت بـ</p>
+            <p class="prize-name">${prize}</p>
+            <button type="button" class="btn-next" id="nextBtn">التالي</button>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#nextBtn').addEventListener('click', async () => {
+        modal.remove();
+        nameForm.reset();
+        spinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'دور العجلة';
+        if (stockEndedAfter) {
+            showStockEndedScreen();
+            return;
+        }
+        try {
+            const data = await refreshSegments();
+            if (!data.has_stock) {
+                showStockEndedScreen();
+                return;
+            }
+            showFormView();
+        } catch {
+            showFormView();
+        }
+    });
+}
+
+async function spinWheel() {
+    if (spinning) return;
+    if (!hasAvailableSegments()) {
+        showStockEndedScreen();
+        return;
+    }
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = 'جاري الدوران...';
+
+    try {
+        try {
+            const fresh = await refreshSegments();
+            if (!fresh.has_stock || !hasAvailableSegments()) {
+                showStockEndedScreen();
+                return;
+            }
+        } catch {
+            /* استخدم البيانات المحفوظة */
+        }
+
+        const spinSegments = segments.map(s => ({ ...s }));
+        if (!hasAvailableSegments(spinSegments)) {
+            showStockEndedScreen();
+            return;
+        }
+
+        const response = await fetch('{% url "game:leap_wheel_spin" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ visitor_name: currentVisitorName, visitor_phone: currentVisitorPhone })
+        });
+        const result = await response.json();
+        if (!result.success) {
+            if (result.stock_ended) {
+                showStockEndedScreen();
+                return;
+            }
+            alert(result.message || 'حدث خطأ');
+            spinning = false;
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'دور العجلة';
+            return;
+        }
+
+        const wonPrize = result.prize;
+        const prizeIndex = spinSegments.findIndex(s => s.name === wonPrize);
+        if (prizeIndex === -1 || !spinSegments[prizeIndex]?.available) {
+            applySegmentsUpdate(result);
+            drawWheel();
+            alert('حدث خطأ — الجائزة غير متوفرة');
+            spinning = false;
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'دور العجلة';
+            return;
+        }
+
+        applySegmentsUpdate(result);
+
+        const numSeg = spinSegments.length;
+        const segmentAngle = (2 * Math.PI) / numSeg;
+        const pointerAngle = -Math.PI / 2;
+        const segmentMidAngle = prizeIndex * segmentAngle + segmentAngle / 2;
+        const targetAngle = pointerAngle - segmentMidAngle;
+        const finalAngle = (2 * Math.PI * (8 + Math.floor(Math.random() * 3))) + targetAngle;
+        const duration = 5500;
+        let start = null;
+
+        function animate(ts) {
+            if (!start) start = ts;
+            const progress = Math.min((ts - start) / duration, 1);
+            const angle = easeOutElastic(progress) * finalAngle;
+            ctx.setTransform(canvasDpr, 0, 0, canvasDpr, 0, 0);
+            ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+            ctx.save();
+            ctx.translate(WHEEL_SIZE / 2, WHEEL_SIZE / 2);
+            ctx.rotate(angle);
+            ctx.translate(-WHEEL_SIZE / 2, -WHEEL_SIZE / 2);
+            drawWheelContent(spinSegments);
+            ctx.restore();
+            if (progress < 1) requestAnimationFrame(animate);
+            else setTimeout(() => {
+                drawWheel();
+                showPrizeModal(wonPrize, !result.has_stock);
+            }, 400);
+        }
+        requestAnimationFrame(animate);
+    } catch {
+        alert('حدث خطأ في الاتصال');
+        spinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'دور العجلة';
+    }
+}
+
+spinBtn.addEventListener('click', spinWheel);
+</script>
+{% endif %}
+{% endblock %}

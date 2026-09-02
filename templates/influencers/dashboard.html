@@ -2,77 +2,82 @@
 {% load static %}
 
 {% block title %}لوحة التحكم - {{ influencer.name }} | دوّرها{% endblock %}
+{% block body_class %}dash-page{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
+<div class="app-shell">
+    <aside class="sidebar">
+        <nav class="side-nav">
+            <a class="active" href="#"><i class="fas fa-home"></i> الرئيسية</a>
+            <a href="#"><i class="fas fa-bullhorn"></i> الحملات</a>
+            <a href="#"><i class="fas fa-users"></i> المشاركون</a>
+            <a href="#"><i class="fas fa-gift"></i> الجوائز</a>
+            <a href="#"><i class="fas fa-chart-bar"></i> التقارير</a>
+            <a href="#"><i class="fas fa-cog"></i> الإعدادات</a>
+        </nav>
+        <a href="{% url 'companies:home' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</a>
+    </aside>
+    <main class="dash-main">
+        <header class="dash-header">
+            <div class="dash-logo">
+                <span class="dash-logo-mark"><i class="fas fa-compass"></i></span>
+                <span class="dash-logo-text">
+                    <strong>دورها</strong>
+                    <span>DAWERHA</span>
+                </span>
+            </div>
+            <div class="dash-heading">
+                <h1>لوحة التحكم</h1>
+                <p class="sub">نظرة عامة على حملتك — {{ influencer.name }}</p>
+            </div>
+        </header>
 
-<header class="hero">
-    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo">
-    <h1 class="hero-title fade-in">لوحة التحكم</h1>
-    <p class="fade-in">{{ influencer.name }} 📊</p>
-</header>
+        <div class="kpi-row">
+            <div class="kpi">
+                <div class="k">عدد المسجلين</div>
+                <div class="v">{{ participants_count }}</div>
+                <div class="kpi-foot"><span class="muted">إجمالي المشاركين</span></div>
+            </div>
+            <div class="kpi">
+                <div class="k">الحالة</div>
+                <div class="v" style="font-size:22px;">{{ influencer.get_status_display }}</div>
+                <div class="kpi-foot"><span class="muted">حالة الحساب</span></div>
+            </div>
+            <div class="kpi">
+                <div class="k">المنصة</div>
+                <div class="v" style="font-size:22px;">{{ influencer.get_platform_display }}</div>
+                <div class="kpi-foot"><span class="muted">منصة المؤثر</span></div>
+            </div>
+        </div>
 
-<!-- Main Content -->
-<main class="stage">
-    <section class="fade-in" style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 12px 40px rgba(106, 63, 160, 0.15); text-align: center;">
-        <h2 style="color: var(--purple); margin-bottom: 20px;">معلومات المؤثر</h2>
-        <div style="margin-bottom: 30px;">
-            <p><strong>الاسم:</strong> {{ influencer.name }}</p>
-            <p><strong>المنصة:</strong> {{ influencer.get_platform_display }}</p>
+        <div class="chart-card" style="margin-bottom:18px;">
+            <h3>معلومات الحساب</h3>
             <p><strong>اسم المستخدم:</strong> {{ influencer.username }}</p>
-            <p><strong>البريد الإلكتروني:</strong> {{ influencer.email }}</p>
-            <p><strong>الحالة:</strong> {{ influencer.get_status_display }}</p>
+            <p><strong>البريد:</strong> {{ influencer.email }}</p>
+            {% if participants_count > 0 %}
+                <a href="{% url 'influencers:export_participants' influencer.id %}" class="btn primary">تصدير بيانات المشاركين</a>
+            {% endif %}
         </div>
-        
-        <div style="margin-top: 30px;">
-            <h3 style="color: var(--purple); margin-bottom: 20px;">📊 الإحصائيات</h3>
-            <p style="font-size: 18px; margin: 10px 0;"><strong>عدد المسجلين:</strong> {{ participants_count }}</p>
-            <div style="margin-top: 20px;">
-                {% if participants_count > 0 %}
-                    <a href="{% url 'influencers:export_participants' influencer.id %}" class="btn primary" style="display: inline-block; padding: 12px 30px; background: #28a745; text-decoration: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer;">
-                        📊 تصدير بيانات المشاركين إلى Excel
-                    </a>
-                {% else %}
-                    <button disabled style="display: inline-block; padding: 12px 30px; background: #cccccc; border: none; border-radius: 8px; font-weight: bold; color: #666; cursor: not-allowed;">
-                        📊 تصدير بيانات المشاركين إلى Excel
-                    </button>
-                    <p style="color: #999; font-style: italic; margin-top: 10px; font-size: 14px;">لا يوجد مشاركين حتى الآن</p>
-                {% endif %}
-            </div>
-        </div>
-        
+
         {% if influencer.is_active %}
-            <div style="margin-top: 30px;">
-                <h3 style="color: var(--purple); margin-bottom: 15px;">🔗 الروابط</h3>
-                <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 2px solid #6A3FA0;">
-                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #6A3FA0;">📝 رابط التسجيل للمشاركين:</p>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" id="registrationLink" value="{{ request.scheme }}://{{ request.get_host }}{{ influencer.registration_url }}" readonly style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-                        <button onclick="copyToClipboard('registrationLink')" class="btn primary" style="padding: 10px 20px;">نسخ</button>
-                    </div>
-                </div>
-                <div style="margin-top: 15px; padding: 15px; background: #fff5f7; border-radius: 10px; border: 2px solid #FF6B9D;">
-                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #FF6B9D;">🎡 رابط العجلة (اختيار الفائز):</p>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="text" id="wheelLink" value="{{ request.scheme }}://{{ request.get_host }}{{ influencer.wheel_url }}" readonly style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
-                        <button onclick="copyToClipboard('wheelLink')" class="btn primary" style="padding: 10px 20px; background: #FF6B9D;">نسخ</button>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 10px;">
-                    <p style="margin: 0; color: #1565c0; font-size: 14px;">
-                        💡 <strong>رابط التسجيل:</strong> شارك هذا الرابط مع متابعيك للتسجيل<br>
-                        💡 <strong>رابط العجلة:</strong> استخدم هذا الرابط لتدوير العجلة واختيار الفائز عشوائياً
-                    </p>
-                </div>
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>رابط التسجيل</h3>
+                <input type="text" id="registrationLink" value="{{ request.scheme }}://{{ request.get_host }}{{ influencer.registration_url }}" readonly>
+                <button onclick="copyToClipboard('registrationLink')" class="btn primary" style="margin-top:10px;">نسخ</button>
             </div>
+            <div class="chart-card">
+                <h3>رابط العجلة</h3>
+                <input type="text" id="wheelLink" value="{{ request.scheme }}://{{ request.get_host }}{{ influencer.wheel_url }}" readonly>
+                <button onclick="copyToClipboard('wheelLink')" class="btn teal" style="margin-top:10px;">نسخ</button>
+            </div>
+        </div>
         {% else %}
-            <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-top: 30px;">
-                <p style="color: #856404; margin: 0;">⚠️ الحساب غير مفعل حالياً. يرجى التواصل مع فريق دوّرها لتفعيل الحساب. الروابط ستظهر بعد التفعيل في لوحة التحكم.</p>
-            </div>
+        <div class="chart-card">الحساب غير مفعل حالياً. الروابط تظهر بعد التفعيل.</div>
         {% endif %}
-    </section>
-</main>
+    </main>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -80,15 +85,14 @@
 function copyToClipboard(elementId) {
     const element = document.getElementById(elementId);
     element.select();
-    element.setSelectionRange(0, 99999); // For mobile devices
+    element.setSelectionRange(0, 99999);
     document.execCommand('copy');
-    
-    // Show feedback
+
     const button = event.target;
     const originalText = button.textContent;
     button.textContent = 'تم النسخ! ✓';
     button.style.background = '#2ecc71';
-    
+
     setTimeout(() => {
         button.textContent = originalText;
         button.style.background = '';

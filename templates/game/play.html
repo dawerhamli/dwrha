@@ -2,16 +2,10 @@
 {% load static %}
 
 {% block title %}{{ company.name }} | دوّرها{% endblock %}
+{% block body_class %}wheel-play-page{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
-
-<header class="hero">
-    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo">
-</header>
-
-<!-- Main Content -->
+<div class="wheel-page">
 <main class="stage">
     {% if status == 'rejected' %}
     <!-- Status Message -->
@@ -76,8 +70,8 @@
     <!-- Game Section - Show when approved and active -->
     <!-- Name and Phone Input Form -->
     <section id="nameSection" class="name-form-card fade-in">
-        <h2>مرحباً بك! 👋</h2>
-        <p>أدخل اسمك ورقم جوالك لتبدأ اللعب</p>
+        <h2>جاهز للتدوير؟</h2>
+        <p>أدخل اسمك ورقم جوالك ثم اضغط زر العجلة</p>
         
         <form id="nameForm" class="form">
             <label>
@@ -94,14 +88,33 @@
     </section>
 
     <!-- Wheel Section -->
-    <div id="wheelSection" class="wheel-wrap" style="display:none; margin-top:30px;">
-        <div class="needle"></div>
-        <canvas id="wheelCanvas" width="560" height="560"></canvas>
-        <button id="spinBtn" class="btn primary">جرّب حظك ✨</button>
-        <div id="resultText" class="result"></div>
+    <div id="wheelSection" class="wheel-wrap leap-wheel-screen" style="display:none;">
+        <div class="leap-wheel-card">
+            <header class="leap-wheel-card-top">
+                <div class="leap-wheel-logo">
+                    <span class="dash-logo-mark"><i class="fas fa-compass"></i></span>
+                    <span class="dash-logo-text">
+                        <strong>دورها</strong>
+                        <span>DAWERHA</span>
+                    </span>
+                </div>
+            </header>
+            <h1 class="leap-wheel-title">جاهز للدوران؟</h1>
+            <p class="lead">اضغط على زر دور العجلة</p>
+            <div class="leap-wheel-frame">
+                <div class="needle"></div>
+                <canvas id="wheelCanvas" width="560" height="560"></canvas>
+            </div>
+            <div class="wheel-actions leap-wheel-actions">
+                <button type="button" class="btn outline leap-btn-back" id="backFromWheel">رجوع</button>
+                <button id="spinBtn" class="btn primary leap-btn-spin">عرض الجوائز</button>
+            </div>
+            <div id="resultText" class="result"></div>
+        </div>
     </div>
     {% endif %}
 </main>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -277,98 +290,77 @@ nameForm.addEventListener("submit", (e) => {
 });
 
 /**
- * Draw Wheel
+ * Draw Wheel — LEAP design
  */
+const LEAP_WHEEL_COLORS = ['#16949C', '#6D28D9'];
+
+function drawGiftIcon(ctx, x, y, size) {
+    const w = size;
+    const h = size * 0.82;
+    const top = y - h / 2 + size * 0.12;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(x - w / 2, top, w, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(x - w / 2, top + h * 0.38, w, h * 0.14);
+    ctx.fillRect(x - w * 0.08, top, w * 0.16, h);
+}
+
 function drawWheel() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const numSeg = prizes.length;
-    const arc = (2 * Math.PI) / numSeg;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = canvas.width / 2 - 8;
+    const outerR = canvas.width / 2 - 6;
+    const radius = outerR - 20;
+    const numSeg = prizes.length;
+    const arc = (2 * Math.PI) / numSeg;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
+    ctx.fillStyle = '#1A1038';
+    ctx.fill();
 
     for (let i = 0; i < numSeg; i++) {
         ctx.beginPath();
-        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillStyle = LEAP_WHEEL_COLORS[i % LEAP_WHEEL_COLORS.length];
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, i * arc, (i + 1) * arc);
-        ctx.lineTo(centerX, centerY);
+        ctx.closePath();
         ctx.fill();
-        
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.save();
         ctx.translate(centerX, centerY);
         ctx.rotate(i * arc + arc / 2);
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "right";
-        ctx.shadowColor = "rgba(0,0,0,0.5)";
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 1;
-        
-        // Handle long text - wrap and adjust font size
-        const maxWidth = radius - 50;
+        drawGiftIcon(ctx, radius * 0.62, 0, Math.min(34, radius * 0.14));
+
         const prizeText = prizes[i];
-        let fontSize = 20;
+        let fontSize = Math.min(13, Math.floor(radius / 14));
         ctx.font = `bold ${fontSize}px Cairo`;
-        
-        // Measure text width
-        let textWidth = ctx.measureText(prizeText).width;
-        
-        // If text is too long, reduce font size
-        if (textWidth > maxWidth) {
-            fontSize = Math.max(12, Math.floor((maxWidth / textWidth) * fontSize));
-            ctx.font = `bold ${fontSize}px Cairo`;
-            textWidth = ctx.measureText(prizeText).width;
-        }
-        
-        // If still too long, wrap text to multiple lines
-        if (textWidth > maxWidth) {
-            const words = prizeText.split(' ');
-            const lines = [];
-            let currentLine = '';
-            
-            for (let word of words) {
-                const testLine = currentLine ? currentLine + ' ' + word : word;
-                const testWidth = ctx.measureText(testLine).width;
-                
-                if (testWidth > maxWidth && currentLine) {
-                    lines.push(currentLine);
-                    currentLine = word;
-                } else {
-                    currentLine = testLine;
-                }
-            }
-            if (currentLine) {
-                lines.push(currentLine);
-            }
-            
-            // Draw multiple lines
-            const lineHeight = fontSize + 4;
-            const totalHeight = lines.length * lineHeight;
-            const startY = -(totalHeight / 2) + (lineHeight / 2);
-            
-            lines.forEach((line, lineIndex) => {
-                ctx.fillText(line, radius - 20, startY + (lineIndex * lineHeight));
-            });
-        } else {
-            // Single line text
-            ctx.fillText(prizeText, radius - 20, 10);
-        }
-        
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const label = prizeText.length > 14 ? `${prizeText.slice(0, 12)}…` : prizeText;
+        ctx.fillText(label, radius * 0.62, radius * 0.1);
         ctx.restore();
     }
-    
+
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
-    ctx.fillStyle = "#2F1D52";
+    ctx.arc(centerX, centerY, 34, 0, Math.PI * 2);
+    ctx.fillStyle = '#6D28D9';
     ctx.fill();
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = '#fff';
     ctx.lineWidth = 4;
     ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px Cairo';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('D', centerX, centerY);
 }
 
 /**
@@ -400,7 +392,7 @@ async function spinWheel() {
             alert(result.message || 'حدث خطأ أثناء الدوران');
             spinning = false;
             spinBtn.disabled = false;
-            spinBtn.textContent = 'جرّب حظك ✨';
+            spinBtn.textContent = 'عرض الجوائز';
             return;
         }
 
@@ -477,7 +469,7 @@ async function spinWheel() {
             } else {
                 spinning = false;
                 spinBtn.disabled = false;
-                spinBtn.textContent = 'جرّب حظك ✨';
+                spinBtn.textContent = 'عرض الجوائز';
                 
                 resultText.textContent = `🎉 ربحت: ${wonPrize}`;
                 resultText.style.animation = "pulse 1s ease-in-out 3";
@@ -499,7 +491,7 @@ async function spinWheel() {
         alert('حدث خطأ أثناء الدوران. يرجى المحاولة مرة أخرى.');
         spinning = false;
         spinBtn.disabled = false;
-        spinBtn.textContent = 'جرّب حظك ✨';
+        spinBtn.textContent = 'عرض الجوائز';
     }
 }
 
@@ -534,31 +526,13 @@ function showPrizeModal(prize) {
     `;
     
     modal.innerHTML = `
-        <div style="
-            background: #fff;
-            border-radius: 20px;
-            padding: 40px 30px;
-            width: 90%;
-            max-width: 420px;
-            text-align: center;
-            font-family: 'Cairo', sans-serif;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-            animation: fadeIn 0.4s ease;
-        ">
-            <h2 style="color:#2ecc71;font-size:32px;margin:0 0 15px;">🎉 مبروك ${currentVisitorName}!</h2>
-            <p style="font-size:24px;margin:15px 0 30px;color:#333;font-weight:bold;">${prize}</p>
-            <button id="continueBtn" style="
-                background:#6A3FA0;
-                color:white;
-                border:none;
-                padding:14px 30px;
-                border-radius:12px;
-                cursor:pointer;
-                font-size:18px;
-                font-weight:bold;
-                box-shadow: 0 4px 12px rgba(106,63,160,0.4);
-                transition: all 0.3s ease;
-            ">🎁 استلام الجائزة</button>
+        <div class="winner-card" style="font-family:'Cairo',sans-serif;animation:fadeIn 0.4s ease;">
+            <h2 style="color:#5B2DB3;font-size:26px;margin:0 0 8px;">مبروك للفائز!</h2>
+            <div class="winner-avatar"><i class="fas fa-user"></i></div>
+            <p style="font-size:22px;margin:8px 0 4px;color:#1E1B4B;font-weight:900;">${currentVisitorName || 'مشارك'}</p>
+            <p style="color:#6B7280;margin:0 0 16px;">الجائزة</p>
+            <p style="font-size:20px;margin:0 0 24px;color:#14B8A6;font-weight:800;">${prize}</p>
+            <button id="continueBtn" class="btn primary" style="width:100%;">إعلان فائز آخر</button>
         </div>
     `;
     
@@ -594,6 +568,10 @@ function showPrizeModal(prize) {
 
 // Event Listeners
 spinBtn.addEventListener("click", spinWheel);
+document.getElementById('backFromWheel')?.addEventListener('click', () => {
+    wheelSection.style.display = 'none';
+    nameSection.style.display = 'block';
+});
 {% endif %}
 </script>
 {% endblock %}

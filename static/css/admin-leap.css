@@ -1,0 +1,605 @@
+/* Dawerha LEAP — Django Admin Theme */
+
+:root {
+  --leap-purple: #6D28D9;
+  --leap-purple-dark: #2A1760;
+  --leap-purple-mid: #3D2278;
+  --leap-purple-deep: #1A1038;
+  --leap-bg: #1A1038;
+  --leap-card: #2A1760;
+  --leap-card-inner: #241454;
+  --leap-line: rgba(255, 255, 255, 0.12);
+  --leap-muted: rgba(255, 255, 255, 0.65);
+  --leap-ink: #FFFFFF;
+  --leap-link: #C4B5FD;
+}
+
+body.leap-admin,
+body.leap-admin.login {
+  font-family: "Cairo", system-ui, Arial, sans-serif !important;
+  background: var(--leap-bg) !important;
+  color: #fff !important;
+}
+
+body.leap-admin {
+  --primary: #A78BFA;
+  --secondary: #2A1760;
+  --link-fg: #C4B5FD;
+  --link-hover-color: #EDE9FE;
+  --hairline-color: var(--leap-line);
+  --border-color: var(--leap-line);
+  --body-fg: #fff;
+  --body-bg: var(--leap-bg);
+  --body-quiet-color: var(--leap-muted);
+  --header-bg: var(--leap-purple-dark);
+  --header-color: #fff;
+  --breadcrumbs-bg: transparent;
+  --breadcrumbs-fg: var(--leap-muted);
+  --breadcrumbs-link-fg: var(--leap-link);
+  --button-bg: #6D28D9;
+  --button-hover-bg: #5B21B6;
+  --default-button-bg: #6D28D9;
+  --default-button-hover-bg: #5B21B6;
+  --module-bg: var(--leap-card);
+  --darkened-bg: var(--leap-card-inner);
+  --selected-bg: rgba(109, 40, 217, 0.45);
+  --selected-row: rgba(109, 40, 217, 0.35);
+}
+
+body.leap-admin #container {
+  background: var(--leap-bg);
+  color: #fff;
+}
+
+body.leap-admin #header {
+  background: linear-gradient(135deg, #2A1760 0%, #1A1038 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 18px rgba(26, 16, 56, 0.35);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff !important;
+}
+
+body.leap-admin #header a {
+  color: #fff !important;
+}
+
+body.leap-admin #branding {
+  padding: 0;
+}
+
+.leap-admin-brand,
+.dash-logo {
+  direction: ltr;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-logo-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 30%, #A78BFA, #5B2DB3 70%);
+  box-shadow: 0 0 18px rgba(124, 77, 219, 0.35);
+  color: #fff;
+  font-size: 20px;
+}
+
+.dash-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.dash-logo-text strong {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.dash-logo-text span {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 800;
+}
+
+body.leap-admin #user-tools {
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-weight: 700;
+}
+
+body.leap-admin #user-tools a,
+body.leap-admin #user-tools button {
+  color: #fff !important;
+  font-weight: 700;
+}
+
+body.leap-admin #user-tools strong {
+  color: #fff !important;
+}
+
+body.leap-admin #user-tools button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+body.leap-admin .theme-toggle,
+body.leap-admin #header button.theme-toggle {
+  display: none;
+}
+
+body.leap-admin .main {
+  background: var(--leap-bg);
+}
+
+body.leap-admin #content,
+body.leap-admin .content {
+  background: var(--leap-bg);
+  color: #fff;
+}
+
+body.leap-admin .breadcrumbs {
+  background: transparent;
+  padding: 12px 28px 0;
+  color: var(--leap-muted) !important;
+  font-weight: 600;
+}
+
+body.leap-admin .breadcrumbs a {
+  color: var(--leap-link) !important;
+}
+
+body.leap-admin #content h1,
+body.leap-admin .leap-admin-page-header h1 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 900;
+  color: #fff !important;
+}
+
+body.leap-admin .sub {
+  color: var(--leap-muted) !important;
+  margin: 6px 0 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.leap-admin-page-header .dash-logo-text strong {
+  color: #fff;
+}
+
+.leap-admin-page-header .dash-logo-text span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+body.leap-admin .main > #nav-sidebar {
+  background: linear-gradient(180deg, var(--leap-purple-dark) 0%, var(--leap-purple-deep) 100%) !important;
+  border-left: none;
+  border-right: none;
+  width: 260px;
+  padding-top: 18px;
+  color: #fff !important;
+}
+
+body.leap-admin #nav-sidebar,
+body.leap-admin #nav-sidebar * {
+  color: #fff;
+}
+
+body.leap-admin #nav-sidebar .module {
+  background: transparent !important;
+  border: none;
+  box-shadow: none;
+}
+
+body.leap-admin #nav-sidebar .module caption,
+body.leap-admin #nav-sidebar .module h2,
+body.leap-admin #nav-sidebar .module th,
+body.leap-admin #nav-sidebar .module td {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 10px 18px 6px;
+}
+
+body.leap-admin #nav-sidebar .module table {
+  background: transparent !important;
+}
+
+body.leap-admin #nav-sidebar .module th,
+body.leap-admin #nav-sidebar .module td {
+  border: none;
+  padding: 0;
+}
+
+body.leap-admin #nav-sidebar .module a,
+body.leap-admin #nav-sidebar a {
+  display: block;
+  color: #fff !important;
+  padding: 12px 18px;
+  border-radius: 14px;
+  margin: 2px 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+body.leap-admin #nav-sidebar .module a:hover,
+body.leap-admin #nav-sidebar .module a.section,
+body.leap-admin #nav-sidebar a.current-model,
+body.leap-admin #nav-sidebar a.current-app {
+  background: var(--leap-purple) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 18px rgba(109, 40, 217, 0.32);
+}
+
+body.leap-admin #nav-filter {
+  margin: 0 14px 14px;
+  width: calc(100% - 28px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff !important;
+  padding: 10px 12px;
+  font-family: inherit;
+}
+
+body.leap-admin #nav-filter::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+body.leap-admin .toggle-nav-sidebar {
+  background: var(--leap-purple-dark) !important;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff !important;
+}
+
+body.leap-admin #content {
+  padding: 24px 28px 36px;
+}
+
+.leap-admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.dash-heading {
+  text-align: right;
+}
+
+body.leap-admin.dashboard #content-main,
+body.leap-admin .leap-admin-modules {
+  width: 100%;
+}
+
+body.leap-admin #content .module,
+body.leap-admin #content-main .module,
+body.leap-admin .module:not(#nav-sidebar .module) {
+  background: var(--leap-card) !important;
+  border: 1px solid var(--leap-line);
+  border-radius: 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  margin-bottom: 18px;
+  color: #fff;
+}
+
+body.leap-admin .module h2,
+body.leap-admin .module caption {
+  background: linear-gradient(135deg, #3D2278 0%, #6D28D9 100%) !important;
+  color: #fff !important;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--leap-line);
+}
+
+body.leap-admin #content-related .module h2,
+body.leap-admin .leap-recent-module h2,
+body.leap-admin .leap-recent-module h3 {
+  background: linear-gradient(135deg, #3D2278 0%, #6D28D9 100%) !important;
+  color: #fff !important;
+}
+
+body.leap-admin .leap-recent-module h3 {
+  padding: 10px 20px;
+  margin: 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--leap-line);
+}
+
+body.leap-admin #nav-sidebar .module h2,
+body.leap-admin #nav-sidebar .module caption {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+  border-bottom: none;
+}
+
+body.leap-admin #content .module table,
+body.leap-admin .module table {
+  background: var(--leap-card-inner) !important;
+  color: #fff;
+}
+
+body.leap-admin .module th,
+body.leap-admin .module td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--leap-line);
+  color: #fff !important;
+  background: transparent !important;
+}
+
+body.leap-admin .module thead th {
+  background: rgba(0, 0, 0, 0.18) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+body.leap-admin .module tbody tr:hover {
+  background: rgba(109, 40, 217, 0.22) !important;
+}
+
+body.leap-admin .module a,
+body.leap-admin #content a {
+  color: var(--leap-link) !important;
+  font-weight: 700;
+}
+
+body.leap-admin .module a:hover,
+body.leap-admin #content a:hover {
+  color: #EDE9FE !important;
+}
+
+body.leap-admin .module a.addlink,
+body.leap-admin .addlink,
+body.leap-admin .changelink {
+  color: #34D399 !important;
+  font-weight: 800;
+}
+
+body.leap-admin p,
+body.leap-admin li,
+body.leap-admin label,
+body.leap-admin .help,
+body.leap-admin .quiet,
+body.leap-admin .mini,
+body.leap-admin .actionlist,
+body.leap-admin .paginator {
+  color: var(--leap-muted) !important;
+}
+
+body.leap-admin label,
+body.leap-admin .form-row label {
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-weight: 700;
+}
+
+body.leap-admin .button,
+body.leap-admin input[type="submit"],
+body.leap-admin input[type="button"],
+body.leap-admin .submit-row input,
+body.leap-admin a.button {
+  background: var(--leap-purple) !important;
+  border-radius: 12px !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+  padding: 10px 18px !important;
+  box-shadow: 0 6px 18px rgba(109, 40, 217, 0.24);
+}
+
+body.leap-admin .button:hover,
+body.leap-admin input[type="submit"]:hover,
+body.leap-admin input[type="button"]:hover {
+  background: #5B21B6 !important;
+}
+
+body.leap-admin .button.default,
+body.leap-admin .default {
+  background: var(--leap-purple) !important;
+}
+
+body.leap-admin .deletelink {
+  color: #EF4444 !important;
+}
+
+body.leap-admin #content-related .module,
+body.leap-admin .leap-recent-module {
+  border-radius: 20px;
+  background: var(--leap-card) !important;
+  border: 1px solid var(--leap-line);
+}
+
+body.leap-admin #changelist,
+body.leap-admin .change-form,
+body.leap-admin .delete-confirmation {
+  background: transparent;
+  color: #fff;
+}
+
+body.leap-admin #changelist .results,
+body.leap-admin .aligned,
+body.leap-admin fieldset.module,
+body.leap-admin .inline-group,
+body.leap-admin #changelist-filter,
+body.leap-admin .actions,
+body.leap-admin .submit-row,
+body.leap-admin .form-row,
+body.leap-admin div.selector {
+  background: var(--leap-card) !important;
+  border: 1px solid var(--leap-line);
+  border-radius: 16px;
+  color: #fff;
+}
+
+body.leap-admin #result_list,
+body.leap-admin #changelist .results table {
+  background: var(--leap-card-inner) !important;
+  color: #fff;
+}
+
+body.leap-admin #result_list thead th,
+body.leap-admin #changelist .results thead th {
+  background: rgba(0, 0, 0, 0.22) !important;
+  color: #fff !important;
+  border-color: var(--leap-line) !important;
+}
+
+body.leap-admin #result_list tbody td,
+body.leap-admin #result_list tbody th {
+  background: transparent !important;
+  color: #fff !important;
+  border-color: var(--leap-line) !important;
+}
+
+body.leap-admin #result_list tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+body.leap-admin #result_list tbody tr.selected {
+  background: rgba(109, 40, 217, 0.35) !important;
+}
+
+body.leap-admin #changelist-filter h2,
+body.leap-admin #changelist-filter h3 {
+  color: #fff !important;
+  background: transparent !important;
+}
+
+body.leap-admin #changelist-filter li.selected a {
+  color: #fff !important;
+}
+
+body.leap-admin input[type="text"],
+body.leap-admin input[type="password"],
+body.leap-admin input[type="email"],
+body.leap-admin input[type="url"],
+body.leap-admin input[type="number"],
+body.leap-admin input[type="search"],
+body.leap-admin textarea,
+body.leap-admin select {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  color: #fff !important;
+}
+
+body.leap-admin input[type="text"]::placeholder,
+body.leap-admin input[type="search"]::placeholder,
+body.leap-admin textarea::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+body.leap-admin select option {
+  background: var(--leap-purple-dark);
+  color: #fff;
+}
+
+body.leap-admin .messagelist li {
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+body.leap-admin.login {
+  background: var(--leap-bg) !important;
+}
+
+/* Login */
+body.leap-admin.login #header,
+body.leap-admin.login #footer {
+  display: none;
+}
+
+body.leap-admin.login #content {
+  padding: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.leap-login-wrap {
+  width: 100%;
+  min-height: calc(100vh - 40px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.leap-login-card {
+  width: min(100%, 420px);
+  background: linear-gradient(180deg, var(--leap-purple-dark) 0%, var(--leap-purple-deep) 100%);
+  border: 1px solid var(--leap-line);
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  color: #fff;
+}
+
+.leap-login-brand {
+  direction: ltr;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.leap-login-card h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.leap-login-card .sub {
+  color: var(--leap-muted) !important;
+}
+
+.leap-login-card .form-row {
+  margin-bottom: 14px;
+}
+
+.leap-login-card label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.leap-login-card input[type="text"],
+.leap-login-card input[type="password"] {
+  width: 100%;
+}
+
+.leap-login-card .submit-row {
+  margin-top: 18px;
+  padding: 0;
+  background: none;
+}
+
+.leap-login-card .submit-row input {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .leap-admin-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.leap-admin #content {
+    padding: 18px 16px 28px;
+  }
+}

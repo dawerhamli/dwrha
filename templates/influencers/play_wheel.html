@@ -2,18 +2,10 @@
 {% load static %}
 
 {% block title %}العجلة - {{ influencer.name }} | دوّرها{% endblock %}
+{% block body_class %}wheel-play-page{% endblock %}
 
 {% block content %}
-<!-- Header -->
-<img src="{% static 'images/sadu-strip.jpeg' %}" alt="سدو علوي" class="sadu-img">
-
-<header class="hero">
-    <img src="{% static 'images/logodw.png' %}" alt="شعار دوّرها" class="hero-logo fade-in">
-    <h1 class="hero-title fade-in">🎡 عجلة {{ influencer.name }}</h1>
-    <p class="fade-in">دور العجلة لاختيار الجائزة والفائز بشكل عشوائي ✨</p>
-</header>
-
-<!-- Main Content -->
+<div class="wheel-page">
 <main class="stage play-wheel-stage">
     <!-- Statistics Boxes - ترحيبية -->
     <div class="stats-container welcome-stats">
@@ -46,15 +38,29 @@
     </section>
     
     <!-- Wheel Section -->
-    <div id="wheelSection" class="wheel-wrap welcome-wheel">
-        <div class="wheel-container">
-            <div class="needle"></div>
-            <canvas id="wheelCanvas" width="560" height="560"></canvas>
+    <div id="wheelSection" class="wheel-wrap leap-wheel-screen welcome-wheel">
+        <div class="leap-wheel-card">
+            <header class="leap-wheel-card-top">
+                <div class="leap-wheel-logo">
+                    <span class="dash-logo-mark"><i class="fas fa-compass"></i></span>
+                    <span class="dash-logo-text">
+                        <strong>دورها</strong>
+                        <span>DAWERHA</span>
+                    </span>
+                </div>
+            </header>
+            <h1 class="leap-wheel-title">جاهز للدوران؟</h1>
+            <p class="lead">اضغط على زر دور العجلة</p>
+            <div class="leap-wheel-frame wheel-container">
+                <div class="needle"></div>
+                <canvas id="wheelCanvas" width="560" height="560"></canvas>
+            </div>
+            <button id="spinBtn" class="btn primary leap-btn-spin welcome-spin-btn" style="width:100%;max-width:320px;">عرض الجوائز</button>
+            <div id="resultText" class="result-area"></div>
         </div>
-        <button id="spinBtn" class="btn primary spin-btn welcome-spin-btn">دور العجلة 🎡</button>
-        <div id="resultText" class="result-area"></div>
     </div>
 </main>
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -103,13 +109,10 @@
 .play-wheel-stage .stat-number { font-size: clamp(36px, 6vw, 48px); font-weight: 900; margin-bottom: 8px; animation: welcomeNumber 0.6s ease-out 0.2s both; }
 .play-wheel-stage .stat-box-2 .stat-number { animation-delay: 0.3s; }
 .play-wheel-stage .stat-label { font-size: clamp(14px, 2.5vw, 18px); opacity: 0.95; }
-.play-wheel-stage .wheel-wrap { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.play-wheel-stage .wheel-wrap.welcome-wheel .wheel-container { animation: welcomeWheel 0.6s ease-out 0.35s both; }
-.play-wheel-stage .wheel-container { position: relative; width: min(92vw, 520px); max-width: 520px; aspect-ratio: 1; }
-.play-wheel-stage .wheel-container canvas { width: 100% !important; height: 100% !important; max-width: 100%; border-radius: 50%; display: block; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-.play-wheel-stage .needle { position: absolute; top: -8px; right: 50%; transform: translateX(50%); width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 24px solid #2F1D52; z-index: 5; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
-.play-wheel-stage .spin-btn { font-size: clamp(16px, 3vw, 20px); padding: 16px 36px; font-weight: 800; min-width: 200px; }
-.play-wheel-stage .welcome-spin-btn { animation: welcomeBtn 0.4s ease-out 0.7s both; }
+.play-wheel-stage .wheel-wrap { margin-top: 20px; width: 100%; }
+.play-wheel-stage .wheel-wrap.welcome-wheel .leap-wheel-card { animation: welcomeWheel 0.6s ease-out 0.35s both; }
+.play-wheel-stage .wheel-container { position: relative; width: 100%; aspect-ratio: 1; max-width: none; }
+.play-wheel-stage .welcome-spin-btn { animation: welcomeBtn 0.4s ease-out 0.7s both; margin-top: 4px; }
 .play-wheel-stage .result-area { width: 100%; max-width: 500px; margin-top: 10px; }
 .play-wheel-stage .result-card { background: #fff; padding: 28px 24px; border-radius: 16px; text-align: center; border: 3px solid #28a745; box-shadow: 0 8px 24px rgba(40, 167, 69, 0.2); }
 .play-wheel-stage .result-card h2 { color: #155724; margin: 0 0 16px; font-size: clamp(22px, 4vw, 28px); font-weight: 900; }
@@ -361,16 +364,36 @@ function applyPrizeOrderMode() {
     drawWheel();
 }
 
+const LEAP_WHEEL_COLORS = ['#16949C', '#6D28D9'];
+
+function drawGiftIcon(ctx, x, y, size) {
+    const w = size;
+    const h = size * 0.82;
+    const top = y - h / 2 + size * 0.12;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(x - w / 2, top, w, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(x - w / 2, top + h * 0.38, w, h * 0.14);
+    ctx.fillRect(x - w * 0.08, top, w * 0.16, h);
+}
+
 /**
- * Draw Wheel - clear text, responsive
+ * Draw Wheel - LEAP design
  */
 function drawWheel() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const numSeg = wheelPrizes.length;
-    const arc = (2 * Math.PI) / numSeg;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = canvas.width / 2 - 10;
+    const outerR = canvas.width / 2 - 6;
+    const radius = outerR - 20;
+    const numSeg = wheelPrizes.length;
+    const arc = (2 * Math.PI) / numSeg;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
+    ctx.fillStyle = '#1A1038';
+    ctx.fill();
 
     ctx.save();
     ctx.translate(centerX, centerY);
@@ -378,73 +401,45 @@ function drawWheel() {
 
     for (let i = 0; i < numSeg; i++) {
         ctx.beginPath();
-        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillStyle = LEAP_WHEEL_COLORS[i % LEAP_WHEEL_COLORS.length];
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, radius, i * arc, (i + 1) * arc);
-        ctx.lineTo(0, 0);
+        ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.9)";
-        ctx.lineWidth = 4;
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
         ctx.save();
         ctx.rotate(i * arc + arc / 2);
-        const maxWidth = radius - 55;
+        drawGiftIcon(ctx, radius * 0.62, 0, Math.min(34, radius * 0.14));
+
         const prizeText = wheelPrizes[i];
-        let fontSize = Math.min(24, Math.floor(radius / 8));
+        let fontSize = Math.min(13, Math.floor(radius / 14));
         ctx.font = `bold ${fontSize}px Cairo`;
-        let textWidth = ctx.measureText(prizeText).width;
-        if (textWidth > maxWidth) {
-            fontSize = Math.max(14, Math.floor((maxWidth / textWidth) * fontSize));
-            ctx.font = `bold ${fontSize}px Cairo`;
-            textWidth = ctx.measureText(prizeText).width;
-        }
-        ctx.fillStyle = "#fff";
-        ctx.textAlign = "right";
-        ctx.shadowColor = "rgba(0,0,0,0.8)";
-        ctx.shadowBlur = 6;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-        if (textWidth > maxWidth) {
-            const words = prizeText.split(' ');
-            const lines = [];
-            let currentLine = '';
-            for (let word of words) {
-                const testLine = currentLine ? currentLine + ' ' + word : word;
-                if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-                    lines.push(currentLine);
-                    currentLine = word;
-                } else currentLine = testLine;
-            }
-            if (currentLine) lines.push(currentLine);
-            const lh = fontSize + 5;
-            const startY = -(lines.length * lh) / 2 + lh / 2;
-            lines.forEach((line, j) => {
-                ctx.strokeStyle = "rgba(0,0,0,0.9)";
-                ctx.lineWidth = 4;
-                ctx.strokeText(line, radius - 25, startY + j * lh);
-                ctx.fillStyle = "#fff";
-                ctx.fillText(line, radius - 25, startY + j * lh);
-            });
-        } else {
-            ctx.strokeStyle = "rgba(0,0,0,0.9)";
-            ctx.lineWidth = 4;
-            ctx.strokeText(prizeText, radius - 25, 12);
-            ctx.fillStyle = "#fff";
-            ctx.fillText(prizeText, radius - 25, 12);
-        }
-        ctx.shadowColor = "transparent";
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const label = prizeText.length > 14 ? `${prizeText.slice(0, 12)}…` : prizeText;
+        ctx.fillText(label, radius * 0.62, radius * 0.1);
         ctx.restore();
     }
     ctx.restore();
 
     ctx.beginPath();
-    ctx.arc(centerX, centerY, 35, 0, 2 * Math.PI);
-    ctx.fillStyle = "#2F1D52";
+    ctx.arc(centerX, centerY, 34, 0, Math.PI * 2);
+    ctx.fillStyle = '#6D28D9';
     ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 4;
     ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px Cairo';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('D', centerX, centerY);
 }
 
 /**
@@ -472,7 +467,7 @@ async function spinWheel() {
             alert(result.message || 'حدث خطأ أثناء الدوران');
             spinning = false;
             spinBtn.disabled = false;
-            spinBtn.textContent = 'دور العجلة 🎡';
+            spinBtn.textContent = 'عرض الجوائز';
             return;
         }
 
@@ -522,7 +517,7 @@ async function spinWheel() {
                 // Animation complete
                 spinning = false;
                 spinBtn.disabled = false;
-                spinBtn.textContent = 'دور العجلة مرة أخرى 🎡';
+                spinBtn.textContent = 'عرض الجوائز';
                 
                 // Decrease remaining prizes count
                 remainingPrizesCount = Math.max(0, remainingPrizesCount - 1);
@@ -542,7 +537,7 @@ async function spinWheel() {
                             <p><strong>حساب التواصل:</strong> ${winner.social_media_account}</p>
                             <p><strong>المدينة:</strong> ${winner.city}</p>
                         </div>
-                        <button type="button" class="spin-again-btn" id="spinAgainBtn">دور العجلة مرة أخرى 🎡</button>
+                        <button type="button" class="spin-again-btn" id="spinAgainBtn">عرض الجوائز</button>
                     </div>
                 `;
                 document.getElementById('spinAgainBtn').addEventListener('click', function() {
@@ -561,7 +556,7 @@ async function spinWheel() {
         alert('حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.');
         spinning = false;
         spinBtn.disabled = false;
-        spinBtn.textContent = 'دور العجلة 🎡';
+        spinBtn.textContent = 'عرض الجوائز';
     }
 }
 

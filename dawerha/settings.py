@@ -9,6 +9,9 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Ensure logs directory exists (production file handler)
+(BASE_DIR / 'logs').mkdir(exist_ok=True)
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 
@@ -71,20 +74,30 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dawerha.wsgi.application'
 
 # Database
-# Default: PostgreSQL (recommended for production/high load).
-# You can still override any value via environment variables:
-#   DB_ENGINE (e.g. django.db.backends.sqlite3 for local-only SQLite)
+# Default: SQLite for local development.
+# Override via environment for PostgreSQL:
+#   DB_ENGINE=django.db.backends.postgresql
 #   DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
-DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': config('DB_NAME', default='dawerha'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='postgres'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+_db_engine = config('DB_ENGINE', default='django.db.backends.sqlite3')
+if _db_engine == 'django.db.backends.sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': _db_engine,
+            'NAME': config('DB_NAME', default='dawerha'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='postgres'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+            'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=600, cast=int),
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

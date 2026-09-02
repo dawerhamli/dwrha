@@ -14,17 +14,20 @@
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css">
     
+    {% load static %}
     <!-- Styles -->
-    <link rel="stylesheet" href="{% load static %}{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/theme-leap.css' %}?v=20260902">
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <div class="page-wrapper">
         <div class="content-wrapper">
             {% block content %}{% endblock %}
         </div>
         
+        {% block footer %}
         <!-- Footer -->
         <footer class="main-footer">
             <div class="footer-content">
@@ -109,10 +112,11 @@
                 <div id="footerModalContent"></div>
             </div>
         </div>
+        {% endblock %}
     </div>
     
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    {% block chart_js %}{% endblock %}
     <script>
     (function(){
         const overlay = document.getElementById('footerModal');

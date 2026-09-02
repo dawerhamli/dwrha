@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | دوّرها{% endblock %}
+
+{% block dark-mode-vars %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/admin-leap.css' %}?v=20260828c">
+{% endblock %}
+
+{% block branding %}
+<div class="leap-admin-brand">
+    <span class="dash-logo-mark"><i class="fas fa-compass"></i></span>
+    <span class="dash-logo-text">
+        <strong>دورها</strong>
+        <span>DAWERHA</span>
+    </span>
+</div>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} leap-admin{% endblock %}
