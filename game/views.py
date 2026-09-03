@@ -8,7 +8,8 @@ import re
 from datetime import timedelta
 
 from django.conf import settings
-from django.db.models import Count
+from django.db import IntegrityError
+from django.db.models import Count, F
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -364,15 +365,25 @@ def leap_wheel_prizes(request):
 
     segments = _serialize_leap_segments(wheel, request)
     has_stock = any(s['available'] for s in segments)
+
+    phone = (request.GET.get('phone') or '').strip()
+    phone_used = False
+    if phone and re.match(r'^05[0-9]{8}$', phone):
+        phone_used = LeapWheelSpin.objects.filter(
+            leap_wheel=wheel,
+            visitor_phone=phone,
+        ).exists()
+
     return JsonResponse({
         'success': True,
         'segments': segments,
         'has_stock': has_stock,
+        'phone_used': phone_used,
     })
 
 
 def _select_leap_prize(wheel):
-    """اختيار جائزة عشوائية من المتبقي — كل دور يُنقص المخزون تدريجياً."""
+    """اختيار جائزة عشوائية من المتبقي — Nutters بوزن أعلى 40% من باقي الجوائز."""
     from django.db import transaction
 
     with transaction.atomic():
@@ -386,7 +397,8 @@ def _select_leap_prize(wheel):
         if not available:
             return None
 
-        selected = random.choice(available)
+        weights = [1.4 if p.name == 'Nutters' else 1.0 for p in available]
+        selected = random.choices(available, weights=weights, k=1)[0]
         selected.remaining_quantity -= 1
         selected.save(update_fields=['remaining_quantity'])
         return selected
@@ -427,6 +439,13 @@ def leap_wheel_spin(request):
             'message': 'رقم الجوال غير صحيح. يجب أن يبدأ بـ 05 ويحتوي على 10 أرقام'
         }, status=400)
 
+    if LeapWheelSpin.objects.filter(leap_wheel=wheel, visitor_phone=visitor_phone).exists():
+        return JsonResponse({
+            'success': False,
+            'message': 'هذا الرقم مسجّل مسبقاً. لا يمكن المشاركة أكثر من مرة',
+            'phone_used': True,
+        }, status=400)
+
     prize_obj = _select_leap_prize(wheel)
     if not prize_obj:
         return JsonResponse({
@@ -435,15 +454,25 @@ def leap_wheel_spin(request):
             'stock_ended': True,
         }, status=400)
 
-    LeapWheelSpin.objects.create(
-        leap_wheel=wheel,
-        prize=prize_obj,
-        visitor_name=visitor_name,
-        visitor_phone=visitor_phone,
-        prize_name=prize_obj.name,
-        ip_address=_get_client_ip(request),
-        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
-    )
+    try:
+        LeapWheelSpin.objects.create(
+            leap_wheel=wheel,
+            prize=prize_obj,
+            visitor_name=visitor_name,
+            visitor_phone=visitor_phone,
+            prize_name=prize_obj.name,
+            ip_address=_get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+        )
+    except IntegrityError:
+        LeapWheelPrize.objects.filter(pk=prize_obj.pk).update(
+            remaining_quantity=F('remaining_quantity') + 1
+        )
+        return JsonResponse({
+            'success': False,
+            'message': 'هذا الرقم مسجّل مسبقاً. لا يمكن المشاركة أكثر من مرة',
+            'phone_used': True,
+        }, status=400)
 
     remaining_segments = _serialize_leap_segments(wheel, request)
     has_stock = any(s['available'] for s in remaining_segments)

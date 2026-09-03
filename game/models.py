@@ -9,7 +9,7 @@ from companies.models import Company
 # الجوائز الثابتة على عجلة LEAP (7 شرائح)
 DEFAULT_LEAP_PRIZES = [
     {'order': 0, 'name': 'LORIVA'},
-    {'order': 1, 'name': 'مسقيفة'},
+    {'order': 1, 'name': 'سقيفة'},
     {'order': 2, 'name': 'سين جيم'},
     {'order': 3, 'name': 'Nutters'},
     {'order': 4, 'name': 'DUNNAH'},
@@ -147,6 +147,9 @@ class LeapWheel(models.Model):
 
     def ensure_default_prizes(self):
         """إنشاء الجوائز الثابتة — يُكمّل الناقص فقط."""
+        # إعادة تسمية قديمة → جديدة بدون فقدان المخزون
+        self.prizes.filter(name='مسقيفة').update(name='سقيفة')
+
         valid_names = {item['name'] for item in DEFAULT_LEAP_PRIZES}
         self.prizes.exclude(name__in=valid_names).delete()
 
@@ -246,6 +249,12 @@ class LeapWheelSpin(models.Model):
         verbose_name = "دورة LEAP"
         verbose_name_plural = "دورات LEAP"
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['leap_wheel', 'visitor_phone'],
+                name='unique_leap_wheel_phone',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.visitor_name} — {self.prize_name}"

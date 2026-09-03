@@ -2,7 +2,7 @@
 
 LEAP_PRIZE_LOGOS = {
     'LORIVA': 'images/leap-wheel/loriva.png',
-    'مسقيفة': 'images/leap-wheel/alsaqeefa.png',
+    'سقيفة': 'images/leap-wheel/alsaqeefa.png',
     'سين جيم': 'images/leap-wheel/seenjeem.png',
     'Nutters': 'images/leap-wheel/nutters.png',
     'DUNNAH': 'images/leap-wheel/dunnah.png',

@@ -319,8 +319,9 @@ if (mainArea && 'ResizeObserver' in window) {
 }
 setLeapView('form');
 
-async function refreshSegments() {
-    const res = await fetch('{% url "game:leap_wheel_prizes" %}');
+async function refreshSegments(phone) {
+    const qs = phone ? `?phone=${encodeURIComponent(phone)}` : '';
+    const res = await fetch(`{% url "game:leap_wheel_prizes" %}${qs}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
     segments = data.segments;
@@ -336,7 +337,10 @@ nameForm.addEventListener('submit', async (e) => {
         return alert('يرجى إدخال رقم جوال صحيح');
     }
     try {
-        const data = await refreshSegments();
+        const data = await refreshSegments(currentVisitorPhone);
+        if (data.phone_used) {
+            return alert('هذا الرقم مسجّل مسبقاً. لا يمكن المشاركة أكثر من مرة');
+        }
         if (!data.has_stock) return showStockEndedScreen();
     } catch {
         return alert('تعذر تحميل العجلة');
@@ -428,6 +432,14 @@ async function spinWheel() {
         if (!result.success) {
             if (result.stock_ended) {
                 showStockEndedScreen();
+                return;
+            }
+            if (result.phone_used) {
+                alert(result.message || 'هذا الرقم مسجّل مسبقاً');
+                spinning = false;
+                spinBtn.disabled = false;
+                spinBtn.textContent = 'دور العجلة';
+                showFormView();
                 return;
             }
             alert(result.message || 'حدث خطأ');
